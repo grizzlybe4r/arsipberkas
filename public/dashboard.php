@@ -67,30 +67,6 @@ check_login();
 
                 <div class="row">
                     <!-- Cek Rekening Card -->
-                    <?php if ($role <> 'teller'): ?>
-                        <div class="col-lg-6">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="card-title mb-0"><i class="bi bi-search"></i> Cek Berkas Kredit</h5>
-                                </div>
-                                <div class="card-body">
-                                    <form method="POST" class="needs-validation" action="#previewCardPDF" novalidate>
-                                        <div class="mb-3">
-                                            <label class="form-label">Nomor Berkas:</label>
-                                            <input type="text" name="norek" class="form-control" required>
-                                            <div class="invalid-feedback">
-                                                Nomor rekening harus diisi
-                                            </div>
-                                        </div>
-                                        <button type="submit" name="cek" class="btn btn-primary">
-                                            Cek
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
                     <?php if ($role === 'ti_admin' || $role === 'adminkredit'): ?>
                         <!-- Upload Card Berkas Kredit-->
                         <div class="col-lg-6">
@@ -118,6 +94,31 @@ check_login();
 
 
                     <?php endif; ?>
+                    <?php if ($role <> 'teller'): ?>
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="card-title mb-0"><i class="bi bi-search"></i> Cek Berkas Kredit</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="POST" class="needs-validation" action="#previewCardPDF" novalidate>
+                                        <div class="mb-3">
+                                            <label class="form-label">Nomor Berkas:</label>
+                                            <input type="text" name="norek" class="form-control" required>
+                                            <div class="invalid-feedback">
+                                                Nomor rekening harus diisi
+                                            </div>
+                                        </div>
+                                        <button type="submit" name="cek" class="btn btn-primary">
+                                            Cek
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+
                 </div>
 
                 <!-- Alert Messages -->
@@ -262,6 +263,92 @@ check_login();
                     </div>
                 <?php endif; ?>
 
+                <!-- Cek & Upload SK -->
+                <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
+                    <div class="row">
+
+                        <!-- Upload Card SK -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas SK</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form action="" method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="uploadFormSK">
+                                        <div class="mb-3">
+                                            <div class="upload-drop-zone" id="dropZoneSK">
+                                                <i class="bi bi-cloud-upload fs-2"></i>
+                                                <p class="mb-2">Drag & drop file JPG di sini atau klik untuk memilih</p>
+                                                <input type="file" name="files[]" class="form-control" accept=".jpg,.jpeg,.png" multiple required id="fileInputSK" style="display: none;">
+                                                <button type="button" class="btn btn-outline-primary" id="browseButtonSK">Pilih File</button>
+                                            </div>
+                                            <div class="selected-files-list" id="filesListSK"></div>
+                                        </div>
+                                        <button type="submit" name="upload_sk" class="btn btn-success" id="uploadButtonSK" disabled>Unggah</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cek SK -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="card-title mb-0"><i class="bi bi-search"></i> Cek SK</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="POST" class="needs-validation" action="#previewCardSK" novalidate>
+                                        <div class="mb-3">
+                                            <label class="form-label">Nomor Rekening:</label>
+                                            <input type="text" name="norek" class="form-control" required>
+                                            <div class="invalid-feedback">
+                                                Nomor rekening harus diisi
+                                            </div>
+                                        </div>
+                                        <button type="submit" name="cek_sk" class="btn btn-success">
+                                            Cek
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <!-- Alert Messages SK-->
+                    <?php if (isset($message_sk)): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill"></i> <?= htmlspecialchars($message_sk) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($error_sk)): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i> <?= htmlspecialchars($error_sk) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- SK Preview Section -->
+                    <?php if (isset($pdf_url_sk)): ?>
+                        <div class="card mt-4" id="previewCardTTD">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-file-earmark-image"></i> Preview Spesimen Tanda Tangan</h5>
+                                <a href="<?= htmlspecialchars($pdf_url_sk) ?>" target="_blank" class="btn btn-light text-dark btn-sm me-2">
+                                    <i class="bi bi-box-arrow-up-right"></i> Buka di Tab Baru
+                                </a>
+                            </div>
+                            <div class="card-body text-center">
+                                <img src="<?= htmlspecialchars($pdf_url_sk) ?>" alt="Preview Spesimen Tanda Tangan" class="img-fluid rounded" style="max-height: 600px;">
+
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+
+                <?php endif; ?>
+
             </div>
         </div>
     </div>
@@ -398,6 +485,15 @@ check_login();
                 'fileInputBerkas',
                 'filesListBerkas',
                 'uploadButtonBerkas',
+                ['application/pdf']
+            );
+
+            setupUploadHandlers(
+                'uploadFormSK',
+                'dropZoneSK',
+                'fileInputSK',
+                'filesListSK',
+                'uploadButtonSK',
                 ['application/pdf']
             );
 
