@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/config.php';
+require_once '../includes/config.php'; // Pastikan file ini sudah menginisialisasi $pdo
 require_once '../includes/auth.php';
 check_login('ti_admin'); // Hanya bisa diakses oleh admin TI
 
@@ -14,15 +14,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Hash password untuk keamanan
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    // Simpan user ke database
-    $query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("sss", $username, $hashed_password, $role);
+    try {
+        // Simpan user ke database menggunakan PDO
+        $query = "INSERT INTO users (username, password, role) VALUES (:username, :password, :role)";
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt->bindParam(':password', $hashed_password, PDO::PARAM_STR);
+        $stmt->bindParam(':role', $role, PDO::PARAM_STR);
 
-    if ($stmt->execute()) {
-        $message = "User berhasil ditambahkan!";
-    } else {
-        $message = "Terjadi kesalahan: " . $stmt->error;
+        if ($stmt->execute()) {
+            $message = "User berhasil ditambahkan!";
+        } else {
+            $message = "Terjadi kesalahan saat menambahkan user.";
+        }
+    } catch (PDOException $e) {
+        $message = "Terjadi kesalahan: " . $e->getMessage();
     }
 }
 ?>
@@ -84,6 +90,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="dashboard.php">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-dark" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-check"></i>
+                            Cek Berkas
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
+                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
+                        </ul>
                     </li>
                     <?php if ($role === 'ti_admin'): ?>
                         <li class="nav-item">
@@ -147,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="marketing">Marketing</option>
                                     <option value="ti_admin">TI (Admin)</option>
                                     <option value="teller">Teller</option>
+                                    <option value="admin_dok">Admin Dokumen</option>
                                 </select>
                                 <div class="invalid-feedback">
                                     Role harus dipilih

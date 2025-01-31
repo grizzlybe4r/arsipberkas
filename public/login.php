@@ -12,14 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Cegah serangan XSS
     $username = htmlspecialchars($username);
 
-    $query = "SELECT * FROM users WHERE username = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $username);
+    // Query untuk mencari user berdasarkan username
+    $query = "SELECT * FROM users WHERE username = :username";
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
     $stmt->execute();
-    $result = $stmt->get_result();
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
+    // Cek apakah user ditemukan
+    if ($stmt->rowCount() === 1) {
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Verifikasi password
         if (password_verify($password, $user['password'])) {
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
     }
+
     // Error jika username/password salah
     $error = "Username atau password salah!";
 }
@@ -41,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Tampilkan pesan logout jika ada
 $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 

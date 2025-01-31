@@ -206,3 +206,15 @@ body {
         padding: 8px 10px;
     }
 }
+
+.modal-content {
+    border-radius: 1rem;
+}
+
+.modal-backdrop.show {
+    opacity: 0.7;
+}
+
+.alert-icon i {
+    opacity: 0.9;
+}
