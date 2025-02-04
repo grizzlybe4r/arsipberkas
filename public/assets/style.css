@@ -218,3 +218,50 @@ body {
 .alert-icon i {
     opacity: 0.9;
 }
+
+/* Tambahkan ke file style.css */
+.search-container {
+    position: relative;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.highlight {
+    background-color: #e9ecef;
+}
+
+.pagination {
+    margin-bottom: 2rem;
+}
+.page-link {
+    color: #0d6efd;
+    cursor: pointer;
+}
+.page-link:hover {
+    color: #0a58ca;
+}
+#pageInfo {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+}

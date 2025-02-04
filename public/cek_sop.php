@@ -72,6 +72,7 @@ check_login();
                     <h2>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h2>
                 </div>
 
+                <!-- Cek SOP -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card border-0 shadow-sm">
@@ -80,31 +81,17 @@ check_login();
                                 <h5 class="card-title mb-0">Cek Status SOP</h5>
                             </div>
                             <div class="card-body p-4">
-                                <form method="POST" class="needs-validation" action="#previewCardSOP" novalidate>
-                                    <div class="input-group input-group-lg">
-                                        <input
-                                            type="text"
-                                            name="norek"
-                                            class="form-control form-control-lg"
-                                            placeholder="Ketik kata kunci..."
-                                            aria-label="Nomor Rekening"
-                                            aria-describedby="button-cek-sop"
-                                            required>
-                                        <button
-                                            class="btn btn-success"
-                                            type="submit"
-                                            name="cek_sop"
-                                            id="button-cek-sop">
-                                            <i class="bi bi-search me-2"></i> Cek SOP
-                                        </button>
-                                        <div class="invalid-feedback">
-                                            Nomor SOP harus diisi
-                                        </div>
-                                    </div>
-                                </form>
-                                <small class="text-muted mt-2 d-block text-center">
-                                    Masukkan kata kunci untuk memeriksa SOP yang terkait.
-                                </small>
+                                <div class="search-container">
+                                    <input
+                                        type="text"
+                                        id="searchInputSOP"
+                                        class="form-control form-control-lg"
+                                        placeholder="Ketik kata kunci..."
+                                        style="font-size: 14px;"
+                                        autocomplete="off">
+                                    <div id="searchSuggestionsSOP" class="search-suggestions"></div>
+                                </div>
+                                <div id="searchResultsSOP" class="mt-4"></div>
                             </div>
                         </div>
                     </div>
@@ -170,44 +157,7 @@ check_login();
                     <?php endif; ?>
                 <?php endforeach; ?>
 
-                <!-- SOP Preview Section -->
-                <?php if (isset($pdf_url_sop)): ?>
-                    <div class="card mt-4" id="previewCardPDF">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Preview Berkas SK</h5>
-                            <div class="btn-group">
-                                <a href="<?= htmlspecialchars($pdf_url_sop) ?>" target="_blank" class="btn btn-light btn-sm me-2">
-                                    <i class="bi bi-box-arrow-up-right"></i> Buka di Tab Baru
-                                </a>
-                                <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
-                                    <a href="<?= htmlspecialchars($pdf_url_sop) ?>&download=1" class="btn btn-light btn-sm">
-                                        <i class="bi bi-download"></i> Unduh PDF
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <object
-                                data="<?= htmlspecialchars($pdf_url_sop) ?>"
-                                type="application/pdf"
-                                width="100%"
-                                height="600px">
-                                <p class="text-center">
-                                    Browser Anda tidak mendukung preview PDF.
-                                    <br>
-                                    <a href="<?= htmlspecialchars($pdf_url_sop) ?>" target="_blank" class="btn btn-primary btn-sm mt-2">
-                                        <i class="bi bi-box-arrow-up-right"></i> Buka di Tab Baru
-                                    </a>
-                                    <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
-                                        <a href="<?= htmlspecialchars($pdf_url_sop) ?>&download=1" class="btn btn-primary btn-sm mt-2 ms-2">
-                                            <i class="bi bi-download"></i> Unduh PDF
-                                        </a>
-                                    <?php endif; ?>
-                                </p>
-                            </object>
-                        </div>
-                    </div>
-                <?php endif; ?>
+
             </div>
 
 
@@ -219,188 +169,106 @@ check_login();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            'use strict';
+            const searchInputSOP = document.getElementById('searchInputSOP');
+            const searchSuggestionsSOP = document.getElementById('searchSuggestionsSOP');
+            const searchResultsSOP = document.getElementById('searchResultsSOP');
+            const paginationContainer = document.createElement('div');
+            paginationContainer.id = 'paginationContainer';
+            searchResultsSOP.parentNode.insertBefore(paginationContainer, searchResultsSOP.nextSibling);
+            let typingTimerSOP;
+            let currentPage = 1;
+            let totalPages = 1;
 
-            // Form validation
-            var forms = document.querySelectorAll('.needs-validation');
-            Array.prototype.slice.call(forms).forEach(function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
+            // Fungsi untuk membuat card SOP
+            function createSopCard(sop) {
+                return `
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3">
+                                <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <span class="text-primary">${sop.nomor_sop}</span> | 
+                                        <span>${sop.tahun_disahkan}</span>
+                                    </div>
+                                </div>
+                                <h5 class="mb-3">${sop.judul_sop}</h5>
+                                <div>
+                                    <a href="detail_sop.php?id=${sop.id}" class="btn btn-primary">
+                                        <i class="bi bi-search me-1"></i> Selengkapnya
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            }
 
-            // Handle upload functionality
-            function setupUploadHandlers(formId, dropZoneId, fileInputId, filesListId, uploadButtonId, validTypes) {
-                const dropZone = document.getElementById(dropZoneId);
-                const fileInput = document.getElementById(fileInputId);
-                const filesList = document.getElementById(filesListId);
-                const uploadButton = document.getElementById(uploadButtonId);
-
-                console.log('Setup handlers for:', {
-                    dropZone,
-                    fileInput,
-                    filesList,
-                    uploadButton
-                });
-
-                // Pastikan semua elemen ada
-                if (!dropZone || !fileInput || !filesList || !uploadButton) {
-                    console.error('Some elements are missing for', formId);
-                    return;
+            // Fungsi untuk membuat pagination
+            function createPagination(currentPage, totalPages) {
+                let paginationHTML = '<nav><ul class="pagination justify-content-center">';
+                if (currentPage > 1) {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}"> << </a></li>`;
                 }
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+                if (currentPage < totalPages) {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}"> >> </a></li>`;
+                }
+                paginationHTML += '</ul></nav>';
+                return paginationHTML;
+            }
 
-                // Drag and drop
-                dropZone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.add('dragover');
-                });
-
-                dropZone.addEventListener('dragleave', () => {
-                    dropZone.classList.remove('dragover');
-                });
-
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
-                    handleFiles(files);
-                });
-
-                // Browse button
-                const browseButton = dropZone.querySelector('.btn-outline-primary');
-                browseButton.addEventListener('click', () => {
-                    fileInput.click();
-                });
-
-                // File input change
-                fileInput.addEventListener('change', (e) => {
-                    handleFiles(e.target.files);
-                });
-
-                // Handle files and validation
-                function handleFiles(files) {
-                    filesList.innerHTML = '';
-                    let validFiles = true;
-
-                    Array.from(files).forEach(file => {
-                        const div = document.createElement('div');
-                        div.className = 'selected-file-item';
-
-                        // Validate file type
-                        if (!validTypes.includes(file.type)) {
-                            div.innerHTML = `
-                        <span class="text-danger">${file.name} (Format tidak sesuai!)</span>
-                        <i class="bi bi-x-circle remove-file"></i>
-                    `;
-                            validFiles = false;
+            // Fungsi untuk memuat data SOP
+            function loadSOP(page, searchTerm = '') {
+                const url = searchTerm ? `search_sop.php?term=${encodeURIComponent(searchTerm)}&page=${page}` : `get_all_sop.php?page=${page}`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results.length > 0) {
+                            searchResultsSOP.innerHTML = data.results.map(sop => createSopCard(sop)).join('');
+                            paginationContainer.innerHTML = createPagination(data.currentPage, data.totalPages);
                         } else {
-                            div.innerHTML = `
-                        <span>${file.name}</span>
-                        <i class="bi bi-x-circle remove-file"></i>
-                    `;
+                            searchResultsSOP.innerHTML = '<div class="alert alert-info">Tidak ditemukan SOP yang sesuai dengan kata kunci.</div>';
+                            paginationContainer.innerHTML = '';
                         }
-
-                        filesList.appendChild(div);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResultsSOP.innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data.</div>';
+                        paginationContainer.innerHTML = '';
                     });
+            }
 
-                    // Enable upload button if all files are valid
-                    uploadButton.disabled = !validFiles || files.length === 0;
-                }
-
-                // Remove file
-                filesList.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('remove-file')) {
-                        const dt = new DataTransfer();
-                        const files = fileInput.files;
-                        const parent = e.target.parentElement;
-                        const index = Array.from(filesList.children).indexOf(parent);
-
-                        for (let i = 0; i < files.length; i++) {
-                            if (i !== index) {
-                                dt.items.add(files[i]);
-                            }
-                        }
-
-                        fileInput.files = dt.files;
-                        parent.remove();
-                        uploadButton.disabled = fileInput.files.length === 0;
+            // Handle input pencarian
+            searchInputSOP.addEventListener('input', function() {
+                clearTimeout(typingTimerSOP);
+                typingTimerSOP = setTimeout(() => {
+                    const searchTerm = this.value.trim();
+                    if (searchTerm.length > 2) {
+                        loadSOP(1, searchTerm);
+                    } else {
+                        loadSOP(1);
                     }
-                });
-            }
+                }, 500);
+            });
 
-            // Setup handlers for both forms
-            setupUploadHandlers(
-                'uploadFormSpesimen',
-                'dropZoneSpesimen',
-                'fileInputSpesimen',
-                'filesListSpesimen',
-                'uploadButtonSpesimen',
-                ['image/jpeg', 'image/png']
-            );
-
-            setupUploadHandlers(
-                'uploadFormBerkas',
-                'dropZoneBerkas',
-                'fileInputBerkas',
-                'filesListBerkas',
-                'uploadButtonBerkas',
-                ['application/pdf']
-            );
-
-            setupUploadHandlers(
-                'uploadFormSK',
-                'dropZoneSK',
-                'fileInputSK',
-                'filesListSK',
-                'uploadButtonSK',
-                ['application/pdf']
-            );
-
-            setupUploadHandlers(
-                'uploadFormSOP',
-                'dropZoneSOP',
-                'fileInputSOP',
-                'filesListSOP',
-                'uploadButtonSOP',
-                ['application/pdf']
-            );
-
-            // Sidebar toggle functionality
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('show');
-                sidebarBackdrop.classList.toggle('show');
-            }
-
-            sidebarToggle.addEventListener('click', toggleSidebar);
-            sidebarBackdrop.addEventListener('click', toggleSidebar);
-
-            // Close sidebar when window is resized to desktop view
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) {
-                    sidebar.classList.remove('show');
-                    sidebarBackdrop.classList.remove('show');
+            // Handle klik pagination
+            paginationContainer.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    const page = e.target.getAttribute('data-page');
+                    loadSOP(page, searchInputSOP.value.trim());
                 }
             });
-        });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const hash = window.location.hash;
-            if (hash === '#previewCardTTD' || hash === '#previewCardPDF') {
-                const target = document.querySelector(hash);
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            }
+            // Load semua SOP saat pertama kali
+            loadSOP(1);
         });
     </script>
 </body>

@@ -147,6 +147,9 @@ if (isset($_POST['upload_sk']) && ($role === 'admin_dok' || $role === 'ti_admin'
         $judul_sk = $_POST['judul_sk'];
         $tahun_disahkan_sk = $_POST['tahun_disahkan_sk'];
 
+        // Bersihkan judul SK agar aman digunakan sebagai nama file (tetap dengan spasi)
+        $judul_sk_sanitized = preg_replace("/[^a-zA-Z0-9\s]/", "", $judul_sk); // Hapus karakter aneh (biarkan spasi)
+
         // Loop melalui setiap file yang diupload
         for ($i = 0; $i < count($_FILES['files']['name']); $i++) {
             $file_name = $_FILES['files']['name'][$i];
@@ -158,9 +161,9 @@ if (isset($_POST['upload_sk']) && ($role === 'admin_dok' || $role === 'ti_admin'
                 continue;
             }
 
-            // Sanitasi nama file
-            $safe_filename = preg_replace("/[^a-zA-Z0-9.-]/", "_", $file_name);
-            $target_path = $network_path_sk . $safe_filename;
+            // Buat nama file baru berdasarkan judul SK (tanpa underscore)
+            $new_file_name = trim($judul_sk_sanitized) . ".pdf";
+            $target_path = $network_path_sk . $new_file_name;
 
             try {
                 if (move_uploaded_file($temp_file, $target_path)) {
@@ -186,13 +189,15 @@ if (isset($_POST['upload_sk']) && ($role === 'admin_dok' || $role === 'ti_admin'
 
         // Set pesan berdasarkan hasil
         if ($success_count > 0) {
-            $message_sk = "Berhasil mengupload " . $success_count . " file SK dan menyimpan data ke database.";
+            $message_sk = "Berhasil mengupload " . $success_count . " file SK dengan nama berdasarkan judul SK.";
         }
         if (!empty($error_files)) {
             $error_sk = "Gagal mengupload file berikut: " . implode(", ", $error_files);
         }
     }
 }
+
+
 
 // Handle file preview untuk SK
 if (isset($_POST['cek_sk']) && !empty($_POST['norek'])) {
@@ -209,11 +214,11 @@ if (isset($_POST['cek_sk']) && !empty($_POST['norek'])) {
             unset($pdf_url_sk);
         }
     } else {
-        $error_sk = "File SK untuk nomor rekening tersebut tidak ditemukan.";
+        $error_sk = "File SK tidak ditemukan.";
     }
 }
 
-// Handle multiple file upload untuk SK
+// Handle multiple file upload untuk SOP
 if (isset($_POST['upload_sop']) && ($role === 'admin_dok' || $role === 'ti_admin')) {
     if (isset($_FILES['files'])) {
         $success_count = 0;
@@ -223,6 +228,9 @@ if (isset($_POST['upload_sop']) && ($role === 'admin_dok' || $role === 'ti_admin
         $nomor_sop = $_POST['nomor_sop'];
         $judul_sop = $_POST['judul_sop'];
         $tahun_disahkan_sop = $_POST['tahun_disahkan_sop'];
+
+        // Bersihkan judul SK agar aman digunakan sebagai nama file (tetap dengan spasi)
+        $judul_sop_sanitized = preg_replace("/[^a-zA-Z0-9\s]/", "", $judul_sop); // Hapus karakter aneh (biarkan spasi)
 
         // Loop melalui setiap file yang diupload
         for ($i = 0; $i < count($_FILES['files']['name']); $i++) {
@@ -235,9 +243,9 @@ if (isset($_POST['upload_sop']) && ($role === 'admin_dok' || $role === 'ti_admin
                 continue;
             }
 
-            // Sanitasi nama file
-            $safe_filename = preg_replace("/[^a-zA-Z0-9.-]/", "_", $file_name);
-            $target_path = $network_path_sop . $safe_filename;
+            // Buat nama file baru berdasarkan judul SK (tanpa underscore)
+            $new_file_name = trim($judul_sop_sanitized) . ".pdf";
+            $target_path = $network_path_sop . $new_file_name;
 
             try {
                 if (move_uploaded_file($temp_file, $target_path)) {
@@ -284,6 +292,6 @@ if (isset($_POST['cek_sop']) && !empty($_POST['norek'])) {
             unset($pdf_url_sop);
         }
     } else {
-        $error_sop = "File SOP tersebut tidak ditemukan.";
+        $error_sop = "File SOP tidak ditemukan.";
     }
 }

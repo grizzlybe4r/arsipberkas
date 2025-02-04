@@ -2,12 +2,6 @@
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 check_login();
-
-// Query untuk mengambil semua SK dari database
-$query = "SELECT id, judul_sk FROM sk_table ORDER BY tahun_disahkan DESC";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$sk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -49,17 +43,17 @@ $sk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' || 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-check"></i>
-                            Cek Berkas
+                        <a class="nav-link dropdown-toggle text-dark" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list-check"></i> Cek Berkas
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
-                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
+                            <li><a class="dropdown-item" href="cek_sk.php">Cek SK</a></li>
+                            <li><a class="dropdown-item" href="cek_sop.php">Cek SOP</a></li>
                         </ul>
                     </li>
                     <?php if ($role === 'ti_admin'): ?>
                         <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="add_user.php">
+                            <a class="nav-link text-dark" href="add_user.php">
                                 <i class="bi bi-person-plus"></i> Tambah User
                             </a>
                         </li>
@@ -76,7 +70,6 @@ $sk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-9 col-lg-10 content">
                 <div class="user-welcome">
                     <h2>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h2>
-
                 </div>
 
                 <!-- Cek SK -->
@@ -88,132 +81,21 @@ $sk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <h5 class="card-title mb-0">Cek Status SK</h5>
                             </div>
                             <div class="card-body p-4">
-                                <form method="POST" class="needs-validation" action="#previewCardSK" novalidate>
-                                    <div class="input-group input-group-lg">
-                                        <input
-                                            type="text"
-                                            name="norek"
-                                            class="form-control form-control-lg"
-                                            placeholder="Ketik kata kunci..."
-                                            aria-label="Nomor Rekening"
-                                            aria-describedby="button-cek-sk"
-                                            required>
-                                        <button
-                                            class="btn btn-success"
-                                            type="submit"
-                                            name="cek_sk"
-                                            id="button-cek-sk">
-                                            <i class="bi bi-search me-2"></i> Cek SK
-                                        </button>
-                                        <div class="invalid-feedback">
-                                            Nomor SK harus diisi
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alert Modal -->
-                <div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header border-0 py-3">
-                                <h5 class="modal-title fw-bold"></h5>
-                                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body px-4 py-4">
-                                <div class="text-center mb-4">
-                                    <div class="alert-icon mb-3">
-                                        <i class="bi" style="font-size: 3rem;"></i>
-                                    </div>
-                                    <div class="alert-message fs-5"></div>
+                                <div class="search-container">
+                                    <input
+                                        type="text"
+                                        id="searchInputSK"
+                                        class="form-control form-control-lg"
+                                        placeholder="Ketik kata kunci..."
+                                        style="font-size: 14px;"
+                                        autocomplete="off">
+                                    <div id="searchSuggestionsSK" class="search-suggestions"></div>
                                 </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0 pb-4">
-                                <button type="button" class="btn btn-lg px-4 rounded-3" data-bs-dismiss="modal">Tutup</button>
+                                <div id="searchResultsSK" class="mt-4"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- PHP Alert Handler -->
-                <?php foreach (['sk', 'sop', 'ttd', 'kredit'] as $type): ?>
-                    <?php if (isset(${"message_$type"})): ?>
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const modal = new bootstrap.Modal(document.getElementById('alertModal'));
-                                const alertModal = document.getElementById('alertModal');
-
-                                alertModal.querySelector('.modal-header').className = 'modal-header border-0 py-3 bg-success-subtle';
-                                alertModal.querySelector('.modal-title').textContent = 'Berhasil!';
-                                alertModal.querySelector('.alert-icon i').className = 'bi bi-check-circle-fill text-success';
-                                alertModal.querySelector('.alert-message').innerHTML = '<?= htmlspecialchars(${"message_$type"}) ?>';
-                                alertModal.querySelector('.modal-footer .btn').className = 'btn btn-success btn-lg px-4 rounded-3';
-
-                                modal.show();
-                            });
-                        </script>
-                    <?php endif; ?>
-
-                    <?php if (isset(${"error_$type"})): ?>
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const modal = new bootstrap.Modal(document.getElementById('alertModal'));
-                                const alertModal = document.getElementById('alertModal');
-
-                                alertModal.querySelector('.modal-header').className = 'modal-header border-0 py-3 bg-danger-subtle';
-                                alertModal.querySelector('.modal-title').textContent = 'Gagal!';
-                                alertModal.querySelector('.alert-icon i').className = 'bi bi-exclamation-circle-fill text-danger';
-                                alertModal.querySelector('.alert-message').innerHTML = '<?= htmlspecialchars(${"error_$type"}) ?>';
-                                alertModal.querySelector('.modal-footer .btn').className = 'btn btn-danger btn-lg px-4 rounded-3';
-
-                                modal.show();
-                            });
-                        </script>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-
-                <!-- SK Preview Section -->
-                <?php if (isset($pdf_url_sk)): ?>
-                    <div class="card mt-4" id="previewCardPDF">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Preview Berkas SK</h5>
-                            <div class="btn-group">
-                                <a href="<?= htmlspecialchars($pdf_url_sk) ?>" target="_blank" class="btn btn-light btn-sm me-2">
-                                    <i class="bi bi-box-arrow-up-right"></i> Buka di Tab Baru
-                                </a>
-                                <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
-                                    <a href="<?= htmlspecialchars($pdf_url_sk) ?>&download=1" class="btn btn-light btn-sm">
-                                        <i class="bi bi-download"></i> Unduh PDF
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <object
-                                data="<?= htmlspecialchars($pdf_url_sk) ?>"
-                                type="application/pdf"
-                                width="100%"
-                                height="600px">
-                                <p class="text-center">
-                                    Browser Anda tidak mendukung preview PDF.
-                                    <br>
-                                    <a href="<?= htmlspecialchars($pdf_url_sk) ?>" target="_blank" class="btn btn-primary btn-sm mt-2">
-                                        <i class="bi bi-box-arrow-up-right"></i> Buka di Tab Baru
-                                    </a>
-                                    <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
-                                        <a href="<?= htmlspecialchars($pdf_url_sk) ?>&download=1" class="btn btn-primary btn-sm mt-2 ms-2">
-                                            <i class="bi bi-download"></i> Unduh PDF
-                                        </a>
-                                    <?php endif; ?>
-                                </p>
-                            </object>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
             </div>
         </div>
     </div>
@@ -221,188 +103,106 @@ $sk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            'use strict';
+            const searchInputSK = document.getElementById('searchInputSK');
+            const searchSuggestionsSK = document.getElementById('searchSuggestionsSK');
+            const searchResultsSK = document.getElementById('searchResultsSK');
+            const paginationContainer = document.createElement('div');
+            paginationContainer.id = 'paginationContainer';
+            searchResultsSK.parentNode.insertBefore(paginationContainer, searchResultsSK.nextSibling);
+            let typingTimerSK;
+            let currentPage = 1;
+            let totalPages = 1;
 
-            // Form validation
-            var forms = document.querySelectorAll('.needs-validation');
-            Array.prototype.slice.call(forms).forEach(function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
+            // Fungsi untuk membuat card SK
+            function createSkCard(sk) {
+                return `
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="text-primary">${sk.nomor_sk}</span> | 
+                                    <span>${sk.tahun_disahkan}</span>
+                                </div>
+                            </div>
+                            <h5 class="mb-3">${sk.judul_sk}</h5>
+                            <div>
+                                <a href="detail_sk.php?id=${sk.id}" class="btn btn-primary">
+                                    <i class="bi bi-search me-1"></i> Selengkapnya
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
 
-            // Handle upload functionality
-            function setupUploadHandlers(formId, dropZoneId, fileInputId, filesListId, uploadButtonId, validTypes) {
-                const dropZone = document.getElementById(dropZoneId);
-                const fileInput = document.getElementById(fileInputId);
-                const filesList = document.getElementById(filesListId);
-                const uploadButton = document.getElementById(uploadButtonId);
-
-                console.log('Setup handlers for:', {
-                    dropZone,
-                    fileInput,
-                    filesList,
-                    uploadButton
-                });
-
-                // Pastikan semua elemen ada
-                if (!dropZone || !fileInput || !filesList || !uploadButton) {
-                    console.error('Some elements are missing for', formId);
-                    return;
+            // Fungsi untuk membuat pagination
+            function createPagination(currentPage, totalPages) {
+                let paginationHTML = '<nav><ul class="pagination justify-content-center">';
+                if (currentPage > 1) {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}"> << </a></li>`;
                 }
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+                if (currentPage < totalPages) {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}"> >> </a></li>`;
+                }
+                paginationHTML += '</ul></nav>';
+                return paginationHTML;
+            }
 
-                // Drag and drop
-                dropZone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.add('dragover');
-                });
-
-                dropZone.addEventListener('dragleave', () => {
-                    dropZone.classList.remove('dragover');
-                });
-
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
-                    handleFiles(files);
-                });
-
-                // Browse button
-                const browseButton = dropZone.querySelector('.btn-outline-primary');
-                browseButton.addEventListener('click', () => {
-                    fileInput.click();
-                });
-
-                // File input change
-                fileInput.addEventListener('change', (e) => {
-                    handleFiles(e.target.files);
-                });
-
-                // Handle files and validation
-                function handleFiles(files) {
-                    filesList.innerHTML = '';
-                    let validFiles = true;
-
-                    Array.from(files).forEach(file => {
-                        const div = document.createElement('div');
-                        div.className = 'selected-file-item';
-
-                        // Validate file type
-                        if (!validTypes.includes(file.type)) {
-                            div.innerHTML = `
-                        <span class="text-danger">${file.name} (Format tidak sesuai!)</span>
-                        <i class="bi bi-x-circle remove-file"></i>
-                    `;
-                            validFiles = false;
+            // Fungsi untuk memuat data SK
+            function loadSK(page, searchTerm = '') {
+                const url = searchTerm ? `search_sk.php?term=${encodeURIComponent(searchTerm)}&page=${page}` : `get_all_sk.php?page=${page}`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results.length > 0) {
+                            searchResultsSK.innerHTML = data.results.map(sk => createSkCard(sk)).join('');
+                            paginationContainer.innerHTML = createPagination(data.currentPage, data.totalPages);
                         } else {
-                            div.innerHTML = `
-                        <span>${file.name}</span>
-                        <i class="bi bi-x-circle remove-file"></i>
-                    `;
+                            searchResultsSK.innerHTML = '<div class="alert alert-info">Tidak ditemukan SK yang sesuai dengan kata kunci.</div>';
+                            paginationContainer.innerHTML = '';
                         }
-
-                        filesList.appendChild(div);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResultsSK.innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data.</div>';
+                        paginationContainer.innerHTML = '';
                     });
+            }
 
-                    // Enable upload button if all files are valid
-                    uploadButton.disabled = !validFiles || files.length === 0;
-                }
-
-                // Remove file
-                filesList.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('remove-file')) {
-                        const dt = new DataTransfer();
-                        const files = fileInput.files;
-                        const parent = e.target.parentElement;
-                        const index = Array.from(filesList.children).indexOf(parent);
-
-                        for (let i = 0; i < files.length; i++) {
-                            if (i !== index) {
-                                dt.items.add(files[i]);
-                            }
-                        }
-
-                        fileInput.files = dt.files;
-                        parent.remove();
-                        uploadButton.disabled = fileInput.files.length === 0;
+            // Handle input pencarian
+            searchInputSK.addEventListener('input', function() {
+                clearTimeout(typingTimerSK);
+                typingTimerSK = setTimeout(() => {
+                    const searchTerm = this.value.trim();
+                    if (searchTerm.length > 2) {
+                        loadSK(1, searchTerm);
+                    } else {
+                        loadSK(1);
                     }
-                });
-            }
+                }, 500);
+            });
 
-            // Setup handlers for both forms
-            setupUploadHandlers(
-                'uploadFormSpesimen',
-                'dropZoneSpesimen',
-                'fileInputSpesimen',
-                'filesListSpesimen',
-                'uploadButtonSpesimen',
-                ['image/jpeg', 'image/png']
-            );
-
-            setupUploadHandlers(
-                'uploadFormBerkas',
-                'dropZoneBerkas',
-                'fileInputBerkas',
-                'filesListBerkas',
-                'uploadButtonBerkas',
-                ['application/pdf']
-            );
-
-            setupUploadHandlers(
-                'uploadFormSK',
-                'dropZoneSK',
-                'fileInputSK',
-                'filesListSK',
-                'uploadButtonSK',
-                ['application/pdf']
-            );
-
-            setupUploadHandlers(
-                'uploadFormSOP',
-                'dropZoneSOP',
-                'fileInputSOP',
-                'filesListSOP',
-                'uploadButtonSOP',
-                ['application/pdf']
-            );
-
-            // Sidebar toggle functionality
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('show');
-                sidebarBackdrop.classList.toggle('show');
-            }
-
-            sidebarToggle.addEventListener('click', toggleSidebar);
-            sidebarBackdrop.addEventListener('click', toggleSidebar);
-
-            // Close sidebar when window is resized to desktop view
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) {
-                    sidebar.classList.remove('show');
-                    sidebarBackdrop.classList.remove('show');
+            // Handle klik pagination
+            paginationContainer.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    const page = e.target.getAttribute('data-page');
+                    loadSK(page, searchInputSK.value.trim());
                 }
             });
-        });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const hash = window.location.hash;
-            if (hash === '#previewCardTTD' || hash === '#previewCardPDF') {
-                const target = document.querySelector(hash);
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            }
+            // Load semua SK saat pertama kali
+            loadSK(1);
         });
     </script>
 </body>
