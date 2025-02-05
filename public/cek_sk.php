@@ -10,7 +10,7 @@ check_login();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Cek SK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="assets/style.css">
@@ -43,12 +43,12 @@ check_login();
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-list-check"></i> Cek Berkas
+                        <a class="nav-link dropdown-toggle text-dark <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' || 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-check"></i>
+                            Cek Berkas
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                            <li><a class="dropdown-item" href="cek_sk.php">Cek SK</a></li>
-                            <li><a class="dropdown-item" href="cek_sop.php">Cek SOP</a></li>
+                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
+                            <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
                         </ul>
                     </li>
                     <?php if ($role === 'ti_admin'): ?>
@@ -78,7 +78,7 @@ check_login();
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-primary text-white d-flex align-items-center">
                                 <i class="bi bi-search me-2"></i>
-                                <h5 class="card-title mb-0">Cek Status SK</h5>
+                                <h5 class="card-title mb-0">Cek SK</h5>
                             </div>
                             <div class="card-body p-4">
                                 <div class="search-container">
@@ -131,7 +131,7 @@ check_login();
                             </div>
                             <h5 class="mb-3">${sk.judul_sk}</h5>
                             <div>
-                                <a href="detail_sk.php?id=${sk.id}" class="btn btn-primary">
+                                <a href="detail_sk.php?id=${sk.id}" class="btn btn-info btn-sm">
                                     <i class="bi bi-search me-1"></i> Selengkapnya
                                 </a>
                             </div>
@@ -203,6 +203,27 @@ check_login();
 
             // Load semua SK saat pertama kali
             loadSK(1);
+
+            // Sidebar toggle functionality
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                sidebarBackdrop.classList.toggle('show');
+            }
+
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarBackdrop.addEventListener('click', toggleSidebar);
+
+            // Close sidebar when window is resized to desktop view
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                    sidebarBackdrop.classList.remove('show');
+                }
+            });
         });
     </script>
 </body>

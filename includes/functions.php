@@ -189,7 +189,7 @@ if (isset($_POST['upload_sk']) && ($role === 'admin_dok' || $role === 'ti_admin'
 
         // Set pesan berdasarkan hasil
         if ($success_count > 0) {
-            $message_sk = "Berhasil mengupload " . $success_count . " file SK dengan nama berdasarkan judul SK.";
+            $message_sk = "Berhasil mengupload file SK";
         }
         if (!empty($error_files)) {
             $error_sk = "Gagal mengupload file berikut: " . implode(", ", $error_files);
@@ -271,7 +271,7 @@ if (isset($_POST['upload_sop']) && ($role === 'admin_dok' || $role === 'ti_admin
 
         // Set pesan berdasarkan hasil
         if ($success_count > 0) {
-            $message_sop = "Berhasil mengupload " . $success_count . " file SOP dan menyimpan data ke database.";
+            $message_sop = "Berhasil mengupload file SOP";
         }
         if (!empty($error_files)) {
             $error_sop = "Gagal mengupload file berikut: " . implode(", ", $error_files);

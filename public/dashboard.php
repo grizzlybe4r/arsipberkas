@@ -54,7 +54,7 @@ check_login();
                     <?php if ($role === 'ti_admin'): ?>
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="add_user.php">
-                                <i class="bi bi-person-plus"></i> Tambah User
+                                <i class="bi bi-person-plus"></i> Kelola User
                             </a>
                         </li>
                     <?php endif; ?>
@@ -69,7 +69,7 @@ check_login();
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 content">
                 <div class="user-welcome">
-                    <h2>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h2>
+                    <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
 
                 </div>
 
@@ -249,8 +249,8 @@ check_login();
                         <!-- Upload Card SK -->
                         <div class="col-lg-6">
                             <div class="card">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas SK</h5>
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas SK</h4>
                                 </div>
                                 <div class="card-body">
                                     <form action="" method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="uploadFormSK">
@@ -284,8 +284,8 @@ check_login();
                         <!-- Upload Card SOP -->
                         <div class="col-lg-6">
                             <div class="card">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas SOP</h5>
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas SOP</h4>
                                 </div>
                                 <div class="card-body">
                                     <form action="" method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="uploadFormSOP">

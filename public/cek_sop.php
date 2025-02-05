@@ -10,7 +10,7 @@ check_login();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Cek SOP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="assets/style.css">
@@ -78,7 +78,7 @@ check_login();
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-primary text-white d-flex align-items-center">
                                 <i class="bi bi-search me-2"></i>
-                                <h5 class="card-title mb-0">Cek Status SOP</h5>
+                                <h5 class="card-title mb-0">Cek SOP</h5>
                             </div>
                             <div class="card-body p-4">
                                 <div class="search-container">
@@ -269,6 +269,27 @@ check_login();
 
             // Load semua SOP saat pertama kali
             loadSOP(1);
+
+            // Sidebar toggle functionality
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                sidebarBackdrop.classList.toggle('show');
+            }
+
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarBackdrop.addEventListener('click', toggleSidebar);
+
+            // Close sidebar when window is resized to desktop view
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                    sidebarBackdrop.classList.remove('show');
+                }
+            });
         });
     </script>
 </body>

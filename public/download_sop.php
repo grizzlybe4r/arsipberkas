@@ -3,11 +3,11 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 check_login();
 
-// Validasi role user yang bisa download
-if (!in_array($role, ['admin_dok', 'ti_admin'])) {
-    header('HTTP/1.0 403 Forbidden');
-    die('You are not allowed to download this file');
-}
+// // Validasi role user yang bisa download
+// if (!in_array($role, ['admin_dok', 'ti_admin'])) {
+//     header('HTTP/1.0 403 Forbidden');
+//     die('You are not allowed to download this file');
+// }
 
 $sop_id = isset($_GET['id']) ? $_GET['id'] : null;
 

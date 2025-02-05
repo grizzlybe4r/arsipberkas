@@ -7,7 +7,7 @@ check_login();
 $sk_id = isset($_GET['id']) ? $_GET['id'] : null;
 
 if (!$sk_id) {
-    header('Location: dashboard.php');
+    header('Location: cek_sk.php');
     exit;
 }
 
@@ -18,7 +18,7 @@ $stmt->execute([$sk_id]);
 $sk = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$sk) {
-    header('Location: dashboard.php');
+    header('Location: cek_sk.php');
     exit;
 }
 ?>
@@ -49,11 +49,11 @@ if (!$sk) {
                     <a href="cek_sk.php" class="btn btn-primary">
                         <i class="bi bi-arrow-left"></i> Kembali
                     </a>
-                    <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
-                        <a href="download_sk.php?id=<?= htmlspecialchars($sk['id']) ?>" class="btn btn-outline-primary">
-                            <i class="bi bi-download"></i> Unduh
-                        </a>
-                    <?php endif; ?>
+
+                    <a href="download_sk.php?id=<?= htmlspecialchars($sk['id']) ?>" class="btn btn-outline-primary">
+                        <i class="bi bi-download"></i> Unduh
+                    </a>
+
                 </div>
 
                 <!-- Informasi SK -->
