@@ -44,11 +44,6 @@ try {
     header('Pragma: no-cache');
     header('Expires: 0');
 
-    // Update download counter
-    $update_query = "UPDATE sop_table SET download_count = COALESCE(download_count, 0) + 1 WHERE id = ?";
-    $stmt = $pdo->prepare($update_query);
-    $stmt->execute([$sop_id]);
-
     // Output file
     readfile($file_path);
     exit;

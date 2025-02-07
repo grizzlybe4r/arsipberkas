@@ -1,5 +1,5 @@
 body {
-    background-color: #f8f9fa;
+    background-color: #f8faf8;
 }
 
 .sidebar {
@@ -74,7 +74,7 @@ body {
 }
 
 .user-welcome {
-    background: linear-gradient(to right, #4e73df, #224abe);
+    background: url('https://bankkulonprogo.co.id/bpr/wp-content/uploads/2021/06/gedunghead2.jpg') no-repeat center center fixed;
     padding: 2rem;
     color: white;
     margin-bottom: 1.5rem;

@@ -22,16 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->rowCount() === 1) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Verifikasi password
         if (password_verify($password, $user['password'])) {
-            // Set session sesuai auth.php
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'username' => $user['username'],
                 'role' => $user['role']
             ];
-            $_SESSION['login_time'] = time(); // Catat waktu login
-            header("Location: dashboard.php");
+            $_SESSION['login_time'] = time();
+
+            // Add role-based redirection
+            if ($user['role'] === 'sekre') {
+                header("Location: disposisi/disposisi.php");
+            } else {
+                header("Location: dashboard.php");
+            }
             exit();
         }
     }
@@ -58,6 +62,7 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
             align-items: center;
             padding-top: 40px;
             padding-bottom: 40px;
+            /* background: url('https://bankkulonprogo.co.id/bpr/wp-content/uploads/2021/06/gedunghead2.jpg') no-repeat center center fixed; */
         }
 
         .form-signin {

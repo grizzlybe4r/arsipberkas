@@ -49,6 +49,9 @@ check_login();
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                             <li><a class="dropdown-item" href="cek_sk.php">Cek SK</a></li>
                             <li><a class="dropdown-item" href="cek_sop.php">Cek SOP</a></li>
+                            <?php if ($role !== 'sekre'): ?>
+                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">Disposisi Surat</a></li>
+                            <?php endif; ?>
                         </ul>
                     </li>
                     <?php if ($role === 'ti_admin'): ?>
@@ -70,7 +73,6 @@ check_login();
             <div class="col-md-9 col-lg-10 content">
                 <div class="user-welcome">
                     <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
-
                 </div>
 
                 <div class="row">
@@ -83,6 +85,7 @@ check_login();
                                     <h5 class="card-title mb-0"><i class="bi bi-upload"></i> Upload Berkas Kredit</h5>
                                 </div>
                                 <div class="card-body">
+                                    <h6>Silahkan upload berkas kredit dalam format PDF</h6>
                                     <form action="" method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="uploadFormBerkas">
                                         <div class="mb-3">
                                             <div class="upload-drop-zone" id="dropZoneBerkas">

@@ -38,9 +38,15 @@ check_login();
 
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="dashboard.php">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
+                        <?php if ($role === 'sekre'): ?>
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        <?php else: ?>
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="dashboard.php">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        <?php endif; ?>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-dark <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' || 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-check"></i>
@@ -49,6 +55,9 @@ check_login();
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                             <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
                             <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
+                            <?php if ($role !== 'sekre'): ?>
+                                <li><a class="dropdown-item" href="disposisi/disposisi.php">Disposisi Surat</a></li>
+                            <?php endif; ?>
                         </ul>
                     </li>
                     <?php if ($role === 'ti_admin'): ?>
@@ -69,7 +78,7 @@ check_login();
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 content">
                 <div class="user-welcome">
-                    <h2>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h2>
+                    <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
                 </div>
 
                 <!-- Cek SK -->

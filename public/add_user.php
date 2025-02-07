@@ -11,7 +11,8 @@ $role_names = [
     'marketing' => 'Marketing',
     'ti_admin' => 'Admin TI',
     'teller' => 'Teller',
-    'admin_dok' => 'Admin Dokumen'
+    'admin_dok' => 'Admin Dokumen',
+    'sekre' => 'Sekretaris'
 ];
 
 // Handle form submission untuk menambah user
@@ -170,6 +171,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                     <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
                     <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
+                    <?php if ($current_user_role !== 'sekre'): ?>
+                        <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">Disposisi Surat</a></li>
+                    <?php endif; ?>
                 </ul>
             </li>
             <?php if ($current_user_role === 'ti_admin'): ?>
@@ -256,7 +260,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <td><?php echo htmlspecialchars($role_names[$user['role']] ?? $user['role']); ?></td>
                                                 <td>
                                                     <a href="add_user.php?delete=<?php echo $user['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?');">
-                                                        <i class="bi bi-trash"></i> Hapus
+                                                        <i class="bi bi-trash2"></i> Hapus
                                                     </a>
                                                 </td>
                                             </tr>
