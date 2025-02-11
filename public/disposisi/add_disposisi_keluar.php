@@ -12,19 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $pdo->beginTransaction();
 
         // Dapatkan nomor urut terakhir
-        $stmt = $pdo->query("SELECT MAX(no) as max_no FROM disposisi_surat");
+        $stmt = $pdo->query("SELECT MAX(no) as max_no FROM disposisi_keluar");
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $next_no = ($row['max_no'] ?? 0) + 1;
 
         // Validate input
         $kode = $_POST['kode'];
-        $tanggal_surat = $_POST['tanggal_surat'];
-        $tanggal_masuk = $_POST['tanggal_masuk'];
-        $nomer_surat = $_POST['nomer_surat'];
-        $dari = $_POST['dari'];
+        $tanggal = $_POST['tanggal'];
+        $nomor_surat = $_POST['nomor_surat'];
         $perihal = $_POST['perihal'];
-        $instruksi = $_POST['instruksi'];
-        $diteruskan = $_POST['diteruskan'];
+        $ke = $_POST['ke'];
         $db_path = null;
 
         // Handle file upload
@@ -58,26 +55,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Insert into database using PDO
-        $query = "INSERT INTO disposisi_surat (no, kode, tanggal_surat, tanggal_masuk, nomer_surat, dari, perihal, instruksi, diteruskan, file_path) 
-          VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path)";
+        $query = "INSERT INTO disposisi_keluar (no, kode, tanggal, nomor_surat, perihal, ke, file_path) 
+          VALUES (:no, :kode, :tanggal, :nomor_surat, :perihal, :ke, :file_path)";
 
         $stmt = $pdo->prepare($query);
         $stmt->execute([
             ':no' => $next_no,
             ':kode' => $kode,
-            ':tanggal_surat' => $tanggal_surat,
-            ':tanggal_masuk' => $tanggal_masuk,
-            ':nomer_surat' => $nomer_surat,
-            ':dari' => $dari,
+            ':tanggal' => $tanggal,
+            ':nomor_surat' => $nomor_surat,
             ':perihal' => $perihal,
-            ':instruksi' => $instruksi,
-            ':diteruskan' => $diteruskan,
+            ':ke' => $ke,
             ':file_path' => $db_path,
         ]);
 
         // Commit transaction
         $pdo->commit();
-        header("Location: disposisi.php");
+        header("Location: disposisi_keluar.php");
         exit;
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -146,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="fas fa-plus me-2"></i>
-                                Tambah Data Disposisi
+                                Tambah Data Disposisi Keluar
                             </h5>
                         </div>
                     </div>
@@ -165,44 +159,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="nomer_surat" class="form-label">Nomor Surat</label>
-                                        <input type="text" class="form-control" id="nomer_surat" name="nomer_surat" required>
+                                        <label for="nomor_surat" class="form-label">Nomor Surat</label>
+                                        <input type="text" class="form-control" id="nomor_surat" name="nomor_surat" required>
                                         <div class="invalid-feedback">
                                             Harap isi nomor surat
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Tanggal Surat & Tanggal Masuk -->
+                                <!-- Tanggal -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="tanggal_surat" class="form-label">Tanggal Surat</label>
-                                        <input type="date" class="form-control" id="tanggal_surat" name="tanggal_surat" required>
+                                        <label for="tanggal" class="form-label">Tanggal</label>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                                         <div class="invalid-feedback">
                                             Harap pilih tanggal surat
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
-                                        <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required>
-                                        <div class="invalid-feedback">
-                                            Harap pilih tanggal masuk
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <!-- Dari & Diteruskan -->
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="dari" class="form-label">Dari</label>
-                                        <input type="text" class="form-control" id="dari" name="dari" required>
-                                        <div class="invalid-feedback">
-                                            Harap isi asal surat
-                                        </div>
-                                    </div>
-                                </div>
                                 <!-- Perihal -->
                                 <div class="col-6">
                                     <div class="form-group">
@@ -212,15 +187,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="diteruskan" class="form-label">Diteruskan Kepada</label>
-                                        <input type="text" class="form-control" id="diteruskan" name="diteruskan">
-                                    </div>
-                                </div>
-                                <!-- Instruksi -->
-                                <div class="col-6">
-                                    <div class="form-group">
-                                        <label for="instruksi" class="form-label">Instruksi</label>
-                                        <input type="text" class="form-control" id="instruksi" name="instruksi">
+                                        <label for="ke" class="form-label">Ke</label>
+                                        <input type="text" class="form-control" id="ke" name="ke">
                                     </div>
                                 </div>
 
@@ -246,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                             <!-- Buttons -->
                             <div class="d-flex justify-content-end gap-2 mt-4">
-                                <a href="disposisi.php" class="btn btn-secondary">
+                                <a href="disposisi_keluar.php" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left me-1"></i>
                                     Kembali
                                 </a>

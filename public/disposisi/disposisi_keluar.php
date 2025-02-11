@@ -15,16 +15,16 @@ $selected_tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
 try {
     // Build the base query
-    $base_query = "FROM disposisi_surat WHERE 1=1";
+    $base_query = "FROM disposisi_keluar WHERE 1=1";
     $params = [];
 
     // Add filter conditions
     if (!empty($selected_bulan)) {
-        $base_query .= " AND MONTH(tanggal_masuk) = :bulan";
+        $base_query .= " AND MONTH(tanggal) = :bulan";
         $params[':bulan'] = $selected_bulan;
     }
     if (!empty($selected_tahun)) {
-        $base_query .= " AND YEAR(tanggal_masuk) = :tahun";
+        $base_query .= " AND YEAR(tanggal) = :tahun";
         $params[':tahun'] = $selected_tahun;
     }
 
@@ -36,7 +36,7 @@ try {
     $total_pages = ceil($total_rows / $rows_per_page);
 
     // Get the filtered data with pagination
-    $query = "SELECT * " . $base_query . " ORDER BY tanggal_masuk DESC, id DESC LIMIT :offset, :rows";
+    $query = "SELECT * " . $base_query . " ORDER BY tanggal DESC, id DESC LIMIT :offset, :rows";
     $stmt = $pdo->prepare($query);
 
     // Bind all parameters
@@ -54,7 +54,6 @@ try {
     $filter_params = [];
     if (!empty($selected_bulan)) $filter_params[] = "bulan=" . $selected_bulan;
     if (!empty($selected_tahun)) $filter_params[] = "tahun=" . $selected_tahun;
-    if (!empty($selected_kategori)) $filter_params[] = "kategori=" . urlencode($selected_kategori);
     if (!empty($filter_params)) {
         $export_url .= "?" . implode("&", $filter_params);
     }
@@ -92,7 +91,7 @@ function getNamaBulan($bulan)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disposisi Surat</title>
+    <title>Disposisi Surat Keluar</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -184,7 +183,7 @@ function getNamaBulan($bulan)
                                     <i class="fas fa-file-excel me-1"></i> Export Excel
                                 </a>
 
-                                <a href="add_disposisi.php" class="btn btn-primary">
+                                <a href="add_disposisi_keluar.php" class="btn btn-primary">
                                     <i class="fas fa-plus me-1"></i> Tambah Data
                                 </a>
                             <?php endif; ?>
@@ -206,7 +205,7 @@ function getNamaBulan($bulan)
                                             <option value="500" <?= $rows_per_page == 500 ? 'selected' : '' ?>>500</option>
                                             <option value="1000" <?= $rows_per_page == 1000 ? 'selected' : '' ?>>1000</option>
                                         </select>
-                                        <span class="ms-2">baris</span>
+                                        <span class="ms-2">entries</span>
                                     </form>
                                 </div>
                                 <div class="col-md-4">
@@ -249,7 +248,7 @@ function getNamaBulan($bulan)
                                             <select name="tahun" id="tahun" class="form-select" onchange="document.getElementById('filterForm').submit();">
                                                 <?php
                                                 $current_year = date('Y');
-                                                $year_query = "SELECT DISTINCT YEAR(tanggal_masuk) as year FROM disposisi_surat ORDER BY year DESC";
+                                                $year_query = "SELECT DISTINCT YEAR(tanggal) as year FROM disposisi_keluar ORDER BY year DESC";
                                                 $years = $pdo->query($year_query)->fetchAll(PDO::FETCH_COLUMN);
                                                 if (empty($years)) {
                                                     $years = [$current_year];
@@ -283,13 +282,10 @@ function getNamaBulan($bulan)
                                         <tr>
                                             <th class="text-center">No</th>
                                             <th>Kode</th>
-                                            <th>Tanggal Surat</th>
-                                            <th>Tanggal Masuk</th>
+                                            <th>Tanggal</th>
                                             <th>Nomor Surat</th>
-                                            <th>Dari</th>
                                             <th>Perihal</th>
-                                            <th>Instruksi</th>
-                                            <th>Diteruskan</th>
+                                            <th>Ke</th>
                                             <th class="text-center">File</th>
                                             <?php if ($role === 'sekre' || $role === 'ti_admin'): ?>
                                                 <th class="text-center">Aksi</th>
@@ -306,13 +302,10 @@ function getNamaBulan($bulan)
                                             <tr>
                                                 <td class="text-center"><?= $nomor++ ?></td>
                                                 <td><?= htmlspecialchars($row['kode'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['tanggal_surat'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['tanggal_masuk'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['nomer_surat'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['dari'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($row['tanggal'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($row['nomor_surat'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($row['perihal'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['instruksi'] ?? '') ?></td>
-                                                <td><?= htmlspecialchars($row['diteruskan'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($row['ke'] ?? '') ?></td>
                                                 <td class="text-center">
                                                     <?php
                                                     if (!empty($row['file_path']) && isValidFile($row['file_path'])) {
@@ -337,11 +330,11 @@ function getNamaBulan($bulan)
                                                 <?php if ($role === 'sekre' || $role === 'ti_admin'): ?>
                                                     <td class="text-center">
                                                         <div class="btn-group">
-                                                            <a href="edit_disposisi.php?id=<?= htmlspecialchars($row['id'] ?? '') ?>"
+                                                            <a href="edit_disposisi_keluar.php?id=<?= htmlspecialchars($row['id'] ?? '') ?>"
                                                                 class="btn btn-sm btn-warning me-1" title="Edit">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <a href="delete_disposisi.php?id=<?= htmlspecialchars($row['id'] ?? '') ?>"
+                                                            <a href="delete_disposisi_keluar.php?id=<?= htmlspecialchars($row['id'] ?? '') ?>"
                                                                 class="btn btn-sm btn-danger"
                                                                 onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')"
                                                                 title="Hapus">

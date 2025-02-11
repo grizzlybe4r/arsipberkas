@@ -3,82 +3,81 @@ require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
 check_login('sekre');
 
-$current_user_role = $_SESSION['user']['role']; // Pastikan session sudah diset saat login
+// Pastikan ada parameter ID
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    header("Location: disposisi_keluar.php");
+    exit;
+}
 
+$id = (int)$_GET['id'];
+
+// Ambil data berdasarkan ID
+$stmt = $pdo->prepare("SELECT * FROM disposisi_keluar WHERE id = :id");
+$stmt->bindParam(':id', $id, PDO::PARAM_INT);
+$stmt->execute();
+$data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$data) {
+    echo "Data tidak ditemukan.";
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
-        // Mulai transaction
         $pdo->beginTransaction();
 
-        // Dapatkan nomor urut terakhir
-        $stmt = $pdo->query("SELECT MAX(no) as max_no FROM disposisi_surat");
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $next_no = ($row['max_no'] ?? 0) + 1;
-
-        // Validate input
+        // Validasi input
         $kode = $_POST['kode'];
-        $tanggal_surat = $_POST['tanggal_surat'];
-        $tanggal_masuk = $_POST['tanggal_masuk'];
-        $nomer_surat = $_POST['nomer_surat'];
-        $dari = $_POST['dari'];
+        $tanggal = $_POST['tanggal'];
+        $nomor_surat = $_POST['nomor_surat'];
         $perihal = $_POST['perihal'];
-        $instruksi = $_POST['instruksi'];
-        $diteruskan = $_POST['diteruskan'];
-        $db_path = null;
+        $ke = $_POST['ke'];
+        $db_path = $data['file_path'];
 
-        // Handle file upload
+        // Handle file upload jika ada
         if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
             $file = $_FILES['file'];
             $file_type = $file['type'];
 
-            // Validate file type
             if (!in_array($file_type, ALLOWED_TYPES)) {
                 throw new Exception('Tipe file tidak diizinkan');
             }
 
-            // Generate unique filename
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid() . '.' . $ext;
-
-            // Determine subdirectory based on file type
             $subdir = $file_type == 'application/pdf' ? 'pdf' : 'images';
             $upload_path = UPLOAD_DIR . $subdir . '/' . $filename;
             $db_path = UPLOAD_URL . $subdir . '/' . $filename;
 
-            // Create directory if it doesn't exist
             if (!is_dir(UPLOAD_DIR . $subdir)) {
                 mkdir(UPLOAD_DIR . $subdir, 0755, true);
             }
 
-            // Move uploaded file
             if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
                 throw new Exception('Gagal mengupload file');
             }
         }
 
-        // Insert into database using PDO
-        $query = "INSERT INTO disposisi_surat (no, kode, tanggal_surat, tanggal_masuk, nomer_surat, dari, perihal, instruksi, diteruskan, file_path) 
-          VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path)";
+        // Update data di database
+        $query = "UPDATE disposisi_keluar SET kode = :kode, tanggal = :tanggal,
+                  nomor_surat = :nomor_surat, perihal = :perihal, ke = :ke, file_path = :file_path WHERE id = :id";
 
         $stmt = $pdo->prepare($query);
-        $stmt->execute([
-            ':no' => $next_no,
-            ':kode' => $kode,
-            ':tanggal_surat' => $tanggal_surat,
-            ':tanggal_masuk' => $tanggal_masuk,
-            ':nomer_surat' => $nomer_surat,
-            ':dari' => $dari,
-            ':perihal' => $perihal,
-            ':instruksi' => $instruksi,
-            ':diteruskan' => $diteruskan,
-            ':file_path' => $db_path,
-        ]);
+        $stmt->bindParam(':kode', $kode);
+        $stmt->bindParam(':tanggal', $tanggal);
+        $stmt->bindParam(':nomor_surat', $nomor_surat);
+        $stmt->bindParam(':perihal', $perihal);
+        $stmt->bindParam(':ke', $ke);
+        $stmt->bindParam(':file_path', $db_path);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
-        // Commit transaction
-        $pdo->commit();
-        header("Location: disposisi.php");
-        exit;
+        if ($stmt->execute()) {
+            $pdo->commit();
+            header("Location: disposisi_keluar.php");
+            exit;
+        } else {
+            throw new Exception("Gagal mengupdate data");
+        }
     } catch (Exception $e) {
         $pdo->rollBack();
         echo "Error: " . $e->getMessage();
@@ -86,14 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Data Disposisi</title>
+    <title>Edit Data Disposisi</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -126,13 +124,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .preview-area {
-            display: none;
             margin-top: 1rem;
         }
 
         .preview-area img {
             max-height: 200px;
             object-fit: contain;
+        }
+
+        .current-file {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -142,11 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white py-3">
+                    <div class="card-header bg-warning text-dark py-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
-                                <i class="fas fa-plus me-2"></i>
-                                Tambah Data Disposisi
+                                <i class="fas fa-edit me-2"></i>
+                                Edit Data Disposisi Keluar
                             </h5>
                         </div>
                     </div>
@@ -157,7 +161,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="kode" class="form-label">Kode</label>
-                                        <input type="text" class="form-control" id="kode" name="kode" required>
+                                        <input type="text" class="form-control" id="kode" name="kode"
+                                            value="<?= htmlspecialchars($data['kode']) ?>" required>
                                         <div class="invalid-feedback">
                                             Harap isi kode surat
                                         </div>
@@ -165,8 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="nomer_surat" class="form-label">Nomor Surat</label>
-                                        <input type="text" class="form-control" id="nomer_surat" name="nomer_surat" required>
+                                        <label for="nomor_surat" class="form-label">Nomor Surat</label>
+                                        <input type="text" class="form-control" id="nomor_surat" name="nomor_surat"
+                                            value="<?= htmlspecialchars($data['nomor_surat']) ?>" required>
                                         <div class="invalid-feedback">
                                             Harap isi nomor surat
                                         </div>
@@ -176,67 +182,71 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <!-- Tanggal Surat & Tanggal Masuk -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="tanggal_surat" class="form-label">Tanggal Surat</label>
-                                        <input type="date" class="form-control" id="tanggal_surat" name="tanggal_surat" required>
+                                        <label for="tanggal" class="form-label">Tanggal Surat</label>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal"
+                                            value="<?= $data['tanggal'] ?>" required>
                                         <div class="invalid-feedback">
                                             Harap pilih tanggal surat
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
-                                        <input type="date" class="form-control" id="tanggal_masuk" name="tanggal_masuk" required>
-                                        <div class="invalid-feedback">
-                                            Harap pilih tanggal masuk
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <!-- Dari & Diteruskan -->
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="dari" class="form-label">Dari</label>
-                                        <input type="text" class="form-control" id="dari" name="dari" required>
-                                        <div class="invalid-feedback">
-                                            Harap isi asal surat
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Perihal -->
+
                                 <div class="col-6">
                                     <div class="form-group">
                                         <label for="perihal" class="form-label">Perihal</label>
-                                        <input type="text" class="form-control" id="perihal" name="perihal">
+                                        <input type="text" class="form-control" id="perihal" name="perihal"
+                                            value="<?= htmlspecialchars($data['perihal']) ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="diteruskan" class="form-label">Diteruskan Kepada</label>
-                                        <input type="text" class="form-control" id="diteruskan" name="diteruskan">
-                                    </div>
-                                </div>
-                                <!-- Instruksi -->
-                                <div class="col-6">
-                                    <div class="form-group">
-                                        <label for="instruksi" class="form-label">Instruksi</label>
-                                        <input type="text" class="form-control" id="instruksi" name="instruksi">
+                                        <label for="ke" class="form-label">Ke</label>
+                                        <input type="text" class="form-control" id="ke" name="ke"
+                                            value="<?= htmlspecialchars($data['ke']) ?>">
+
                                     </div>
                                 </div>
 
                                 <!-- File Upload -->
                                 <div class="col-12">
                                     <div class="form-group">
-                                        <label class="form-label">Upload File (PDF/Gambar)</label>
+                                        <label class="form-label">File Lampiran</label>
+
+                                        <?php if (!empty($data['file_path']) && isValidFile($data['file_path'])): ?>
+                                            <div class="current-file mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <?php
+                                                    $ext = strtolower(pathinfo($data['file_path'], PATHINFO_EXTENSION));
+                                                    if ($ext == 'pdf') {
+                                                        echo "<i class='fas fa-file-pdf text-danger me-2 fa-2x'></i>";
+                                                        echo "<div>";
+                                                        echo "<h6 class='mb-0'>File PDF Saat Ini</h6>";
+                                                        echo "<a href='{$data['file_path']}' class='btn btn-sm btn-outline-primary mt-2' target='_blank'>
+                                                                <i class='fas fa-eye me-1'></i>Lihat PDF
+                                                              </a>";
+                                                        echo "</div>";
+                                                    } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                                        echo "<div class='text-center'>";
+                                                        echo "<h6 class='mb-2'>File Gambar Saat Ini</h6>";
+                                                        echo "<img src='{$data['file_path']}' class='img-thumbnail' style='max-height: 150px;' 
+                                                                onclick='showImagePreview(this.src)' style='cursor: pointer;'>";
+                                                        echo "</div>";
+                                                    }
+                                                    ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+
                                         <div class="file-upload">
                                             <label class="file-upload-label">
                                                 <i class="fas fa-cloud-upload-alt"></i>
-                                                <span class="d-block mt-2">Pilih file atau drag & drop disini</span>
+                                                <span class="d-block mt-2">Upload file baru (opsional)</span>
                                                 <small class="text-muted d-block mt-1">Format yang didukung: PDF, JPG, JPEG, PNG</small>
                                                 <input type="file" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png">
                                             </label>
                                         </div>
-                                        <div id="preview-area" class="preview-area">
+                                        <div id="preview-area" class="preview-area" style="display: none;">
                                             <img id="image-preview" class="img-fluid rounded">
                                             <p id="file-name" class="mt-2 mb-0"></p>
                                         </div>
@@ -246,17 +256,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                             <!-- Buttons -->
                             <div class="d-flex justify-content-end gap-2 mt-4">
-                                <a href="disposisi.php" class="btn btn-secondary">
+                                <a href="disposisi_keluar.php" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left me-1"></i>
                                     Kembali
                                 </a>
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-warning">
                                     <i class="fas fa-save me-1"></i>
-                                    Simpan Data
+                                    Simpan Perubahan
                                 </button>
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Preview Gambar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <img id="modalImage" class="img-fluid w-100">
                 </div>
             </div>
         </div>
@@ -280,6 +305,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }, false)
             })
         })()
+
+        // Image preview modal
+        function showImagePreview(src) {
+            const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+            document.getElementById('modalImage').src = src;
+            modal.show();
+        }
 
         // File upload preview
         document.getElementById('file').addEventListener('change', function(e) {
