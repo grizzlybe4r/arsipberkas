@@ -12,6 +12,7 @@ $offset = ($page - 1) * $rows_per_page;
 // Get filter parameters
 $selected_bulan = isset($_GET['bulan']) ? $_GET['bulan'] : '';
 $selected_tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
+$selected_kategori = isset($_GET['kategori']) ? $_GET['kategori'] : ''; // New category filter
 
 try {
     // Build the base query
@@ -26,6 +27,11 @@ try {
     if (!empty($selected_tahun)) {
         $base_query .= " AND YEAR(tanggal_masuk) = :tahun";
         $params[':tahun'] = $selected_tahun;
+    }
+    // Add category filter
+    if (!empty($selected_kategori)) {
+        $base_query .= " AND kategori = :kategori";
+        $params[':kategori'] = $selected_kategori;
     }
 
     // Get total rows for pagination
@@ -54,6 +60,7 @@ try {
     $filter_params = [];
     if (!empty($selected_bulan)) $filter_params[] = "bulan=" . $selected_bulan;
     if (!empty($selected_tahun)) $filter_params[] = "tahun=" . $selected_tahun;
+    if (!empty($selected_kategori)) $filter_params[] = "kategori=" . urlencode($selected_kategori);
     if (!empty($filter_params)) {
         $export_url .= "?" . implode("&", $filter_params);
     }
@@ -80,6 +87,15 @@ function getNamaBulan($bulan)
         '12' => 'Desember'
     ];
     return isset($bulan_list[$bulan]) ? $bulan_list[$bulan] : '';
+}
+
+function formatKategori($kategori)
+{
+    $kategori_list = [
+        'surat_masuk' => 'Surat Masuk',
+        'surat_keluar' => 'Surat Keluar'
+    ];
+    return isset($kategori_list[$kategori]) ? $kategori_list[$kategori] : $kategori;
 }
 ?>
 
@@ -160,15 +176,19 @@ function getNamaBulan($bulan)
             </div>
 
             <!-- Main Content -->
-            <div class="col content">
-                <div class="container py-4">
+            <div class="col-md-9 col-lg-10 content">
+                <div class="user-welcome">
+                    <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
+                </div>
+                <div class="container-fluid ">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h1 class="h2">Disposisi Surat</h1>
                         <div class="d-flex gap-2">
-                            <a href="export_excel.php<?= !empty($_GET) ? '?' . http_build_query($_GET) : '' ?>" class="btn btn-success">
-                                <i class="fas fa-file-excel me-1"></i> Export Excel
-                            </a>
                             <?php if ($role === 'sekre'): ?>
+                                <a href="export_excel.php<?= !empty($_GET) ? '?' . http_build_query($_GET) : '' ?>" class="btn btn-success">
+                                    <i class="fas fa-file-excel me-1"></i> Export Excel
+                                </a>
+
                                 <a href="add_disposisi.php" class="btn btn-primary">
                                     <i class="fas fa-plus me-1"></i> Tambah Data
                                 </a>
@@ -176,7 +196,7 @@ function getNamaBulan($bulan)
                         </div>
                     </div>
 
-                    <!-- Rest of your existing content -->
+
                     <div class="card shadow-sm mb-4">
                         <div class="card-body">
                             <div class="row mb-3 align-items-end">
@@ -185,17 +205,24 @@ function getNamaBulan($bulan)
                                         <label for="rows" class="me-2">Tampilkan:</label>
                                         <select name="rows" id="rows" class="form-select w-auto" onchange="this.form.submit()">
                                             <option value="10" <?= $rows_per_page == 10 ? 'selected' : '' ?>>10</option>
-                                            <option value="20" <?= $rows_per_page == 20 ? 'selected' : '' ?>>20</option>
                                             <option value="50" <?= $rows_per_page == 50 ? 'selected' : '' ?>>50</option>
+                                            <option value="100" <?= $rows_per_page == 100 ? 'selected' : '' ?>>100</option>
+                                            <option value="250" <?= $rows_per_page == 250 ? 'selected' : '' ?>>250</option>
+                                            <option value="500" <?= $rows_per_page == 500 ? 'selected' : '' ?>>500</option>
+                                            <option value="1000" <?= $rows_per_page == 1000 ? 'selected' : '' ?>>1000</option>
                                         </select>
                                         <span class="ms-2">entries</span>
                                     </form>
                                 </div>
                                 <div class="col-md-4">
                                     <form method="get" id="filterForm" class="d-flex align-items-end gap-2">
+                                        <!-- Hidden input untuk mempertahankan filter lain -->
+                                        <input type="hidden" name="rows" value="<?= isset($_GET['rows']) ? $_GET['rows'] : 10 ?>">
+                                        <input type="hidden" name="page" value="<?= isset($_GET['page']) ? $_GET['page'] : 1 ?>">
+
                                         <div class="flex-grow-1">
                                             <label for="bulan" class="form-label">Filter Bulan:</label>
-                                            <select name="bulan" id="bulan" class="form-select" onchange="this.form.submit()">
+                                            <select name="bulan" id="bulan" class="form-select" onchange="document.getElementById('filterForm').submit();">
                                                 <option value="">Semua Bulan</option>
                                                 <?php
                                                 $bulan_list = [
@@ -218,33 +245,30 @@ function getNamaBulan($bulan)
                                                     $selected = ($selected_bulan == $value) ? 'selected' : '';
                                                     echo "<option value='{$value}' {$selected}>{$nama}</option>";
                                                 }
-                                                $current_year = date('Y');
-
-                                                // Get unique years from database
-                                                $year_query = "SELECT DISTINCT YEAR(tanggal_masuk) as year FROM disposisi_surat ORDER BY year DESC";
-                                                $year_result = $pdo->query($year_query);
-                                                $years = $year_result->fetchAll(PDO::FETCH_COLUMN);
-
-                                                if (empty($years)) {
-                                                    $years = [$current_year];
-                                                }
                                                 ?>
                                             </select>
                                         </div>
+
                                         <div class="flex-grow-1">
                                             <label for="tahun" class="form-label">Tahun:</label>
-                                            <select name="tahun" id="tahun" class="form-select" onchange="this.form.submit()">
+                                            <select name="tahun" id="tahun" class="form-select" onchange="document.getElementById('filterForm').submit();">
                                                 <?php
+                                                $current_year = date('Y');
+                                                $year_query = "SELECT DISTINCT YEAR(tanggal_masuk) as year FROM disposisi_surat ORDER BY year DESC";
+                                                $years = $pdo->query($year_query)->fetchAll(PDO::FETCH_COLUMN);
+                                                if (empty($years)) {
+                                                    $years = [$current_year];
+                                                }
+
                                                 $selected_tahun = isset($_GET['tahun']) ? $_GET['tahun'] : $current_year;
                                                 foreach ($years as $year) {
-                                                    echo "<option value='{$year}' " .
-                                                        ($selected_tahun == $year ? 'selected' : '') .
-                                                        ">{$year}</option>";
+                                                    echo "<option value='{$year}' " . ($selected_tahun == $year ? 'selected' : '') . ">{$year}</option>";
                                                 }
                                                 ?>
                                             </select>
                                         </div>
                                     </form>
+
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex justify-content-end">
@@ -266,11 +290,12 @@ function getNamaBulan($bulan)
                                             <th>Kode</th>
                                             <th>Tanggal Surat</th>
                                             <th>Tanggal Masuk</th>
-                                            <th>Nomer Surat</th>
+                                            <th>Nomor Surat</th>
                                             <th>Dari</th>
                                             <th>Perihal</th>
                                             <th>Instruksi</th>
                                             <th>Diteruskan</th>
+                                            <th>Kategori</th>
                                             <th class="text-center">File</th>
                                             <?php if ($role === 'sekre' || $role === 'ti_admin'): ?>
                                                 <th class="text-center">Aksi</th>
@@ -279,7 +304,9 @@ function getNamaBulan($bulan)
                                     </thead>
                                     <tbody>
                                         <?php
-                                        $nomor = 1; // Inisialisasi nomor urut
+                                        // Hitung nomor awal berdasarkan halaman dan jumlah baris per halaman
+                                        $nomor = ($page - 1) * $rows_per_page + 1;
+
                                         foreach ($result as $row):
                                         ?>
                                             <tr>
@@ -292,6 +319,7 @@ function getNamaBulan($bulan)
                                                 <td><?= htmlspecialchars($row['perihal'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($row['instruksi'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($row['diteruskan'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($row['kategori'] ?? '') ?></td>
                                                 <td class="text-center">
                                                     <?php
                                                     if (!empty($row['file_path']) && isValidFile($row['file_path'])) {
@@ -300,12 +328,12 @@ function getNamaBulan($bulan)
 
                                                         if ($ext == 'pdf') {
                                                             echo "<a href='{$file_url}' class='btn btn-sm btn-outline-primary' target='_blank'>
-                                                    <i class='fas fa-file-pdf'></i> Lihat PDF
-                                                </a>";
+                            <i class='fas fa-file-pdf'></i> Lihat PDF
+                          </a>";
                                                         } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
                                                             echo "<img src='{$file_url}' alt='Gambar' class='img-thumbnail' 
-                                                    onclick='showModal(this)' style='cursor: zoom-in; max-height: 50px;' 
-                                                    data-bs-toggle='tooltip' title='Klik untuk memperbesar'>";
+                            onclick='showModal(this)' style='cursor: zoom-in; max-height: 50px;' 
+                            data-bs-toggle='tooltip' title='Klik untuk memperbesar'>";
                                                         }
                                                     } else {
                                                         echo "<span class='text-muted'><i class='fas fa-times'></i> Tidak tersedia</span>";
@@ -329,7 +357,6 @@ function getNamaBulan($bulan)
                                                         </div>
                                                     </td>
                                                 <?php endif; ?>
-
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -337,16 +364,43 @@ function getNamaBulan($bulan)
                             </div>
 
                             <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center mb-0">
-                                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <ul class="pagination justify-content-center d-none d-md-flex mb-0">
+                                    <?php
+                                    // Ambil parameter filter yang ada
+                                    $query_params = $_GET;
+                                    unset($query_params['page']); // Hapus parameter page agar bisa diperbarui
+
+                                    for ($i = 1; $i <= $total_pages; $i++):
+                                        // Tambahkan page ke query parameter
+                                        $query_params['page'] = $i;
+                                        // Bangun URL dengan semua parameter yang ada
+                                        $page_url = '?' . http_build_query($query_params);
+                                    ?>
                                         <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                            <a class="page-link" href="?page=<?= $i ?>&rows=<?= $rows_per_page ?>">
+                                            <a class="page-link" href="<?= $page_url ?>">
                                                 <?= $i ?>
                                             </a>
                                         </li>
                                     <?php endfor; ?>
                                 </ul>
+
+                                <!-- Dropdown Pagination untuk Mobile -->
+                                <div class="d-md-none text-center">
+                                    <select class="form-select w-auto mx-auto" onchange="location = this.value;">
+                                        <?php
+                                        for ($i = 1; $i <= $total_pages; $i++):
+                                            $query_params['page'] = $i;
+                                            $page_url = '?' . http_build_query($query_params);
+                                        ?>
+                                            <option value="<?= $page_url ?>" <?= $i == $page ? 'selected' : '' ?>>
+                                                Halaman <?= $i ?>
+                                            </option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
                             </nav>
+
+
                         </div>
                     </div>
                 </div>

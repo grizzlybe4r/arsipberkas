@@ -1,5 +1,7 @@
 <?php
 require_once '../../includes/config.php';
+require_once '../../includes/auth.php';
+check_login('sekre');
 
 // Pastikan ada parameter ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -212,42 +214,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <label for="dari" class="form-label">Dari</label>
                                         <input type="text" class="form-control" id="dari" name="dari"
                                             value="<?= htmlspecialchars($data['dari']) ?>" required>
-                                        <div class="invalid-feedback">
-                                            Harap isi asal surat
-                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="perihal" class="form-label">Perihal</label>
+                                        <input type="text" class="form-control" id="perihal" name="perihal"
+                                            value="<?= htmlspecialchars($data['perihal']) ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="diteruskan" class="form-label">Diteruskan Kepada</label>
                                         <input type="text" class="form-control" id="diteruskan" name="diteruskan"
-                                            value="<?= htmlspecialchars($data['diteruskan']) ?>" required>
-                                        <div class="invalid-feedback">
-                                            Harap isi tujuan diteruskan
-                                        </div>
-                                    </div>
-                                </div>
+                                            value="<?= htmlspecialchars($data['diteruskan']) ?>">
 
-                                <!-- Perihal -->
-                                <div class="col-12">
-                                    <div class="form-group">
-                                        <label for="perihal" class="form-label">Perihal</label>
-                                        <textarea class="form-control" id="perihal" name="perihal" rows="3"
-                                            required><?= htmlspecialchars($data['perihal']) ?></textarea>
-                                        <div class="invalid-feedback">
-                                            Harap isi perihal surat
-                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Instruksi -->
-                                <div class="col-12">
+                                <div class="col-6">
                                     <div class="form-group">
                                         <label for="instruksi" class="form-label">Instruksi</label>
-                                        <textarea class="form-control" id="instruksi" name="instruksi" rows="3"><?= htmlspecialchars($data['instruksi']) ?></textarea>
-                                        <div class="invalid-feedback">
-                                            Harap isi instruksi
-                                        </div>
+                                        <input type="text" class="form-control" id="instruksi" name="instruksi"
+                                            value="<?= htmlspecialchars($data['instruksi']) ?>">
                                     </div>
                                 </div>
 

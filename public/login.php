@@ -62,7 +62,14 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
             align-items: center;
             padding-top: 40px;
             padding-bottom: 40px;
-            /* background: url('https://bankkulonprogo.co.id/bpr/wp-content/uploads/2021/06/gedunghead2.jpg') no-repeat center center fixed; */
+            background-image: url(https://bankkulonprogo.co.id/bpr/wp-content/uploads/2021/06/gedunghead2.jpg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.5);
+
         }
 
         .form-signin {
@@ -96,7 +103,7 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
             height: 80px;
             margin-bottom: 1.5rem;
             color: #4A55FF;
-            animation: float 3s ease-in-out infinite;
+            animation: float 2s ease-in-out infinite;
         }
 
         @keyframes float {

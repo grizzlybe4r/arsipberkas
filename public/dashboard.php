@@ -28,7 +28,7 @@ check_login();
     <div class="container-fluid p-0">
         <div class="row g-0">
             <!-- Sidebar -->
-            <div class="sidebar bg-white p-3" id="sidebar">
+            <div class="sidebar  p-3" id="sidebar">
                 <div class="d-flex align-items-center mb-4">
                     <i class="bi bi-bank fs-2 text-primary me-2"></i>
                     <h4 class="mb-0">Sistem Informasi Bank Kulon Progo</h4>

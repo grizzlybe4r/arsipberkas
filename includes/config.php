@@ -3,7 +3,7 @@
 $host = 'localhost';
 $user = 'root';
 $password = 'mypassword';
-$database = 'berkas_kredit';
+$database = 'arsip_berkas';
 
 
 try {

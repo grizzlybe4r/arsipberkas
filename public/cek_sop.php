@@ -64,7 +64,7 @@ check_login();
                     <?php if ($role === 'ti_admin'): ?>
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="add_user.php">
-                                <i class="bi bi-person-plus"></i> Tambah User
+                                <i class="bi bi-person-plus"></i> Kelola User
                             </a>
                         </li>
                     <?php endif; ?>
@@ -79,9 +79,11 @@ check_login();
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 content">
                 <div class="user-welcome">
-                    <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']);
-                                        ?></h1>
+                    <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
                 </div>
+
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
 
                 <!-- Cek SOP -->
                 <div class="row">
@@ -107,202 +109,199 @@ check_login();
                         </div>
                     </div>
                 </div>
-
-                <!-- Alert Modal -->
-                <div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header border-0 py-3">
-                                <h5 class="modal-title fw-bold"></h5>
-                                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body px-4 py-4">
-                                <div class="text-center mb-4">
-                                    <div class="alert-icon mb-3">
-                                        <i class="bi" style="font-size: 3rem;"></i>
-                                    </div>
-                                    <div class="alert-message fs-5"></div>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0 pb-4">
-                                <button type="button" class="btn btn-lg px-4 rounded-3" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PHP Alert Handler -->
-                <?php foreach (['sk', 'sop', 'ttd', 'kredit'] as $type): ?>
-                    <?php if (isset(${"message_$type"})): ?>
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const modal = new bootstrap.Modal(document.getElementById('alertModal'));
-                                const alertModal = document.getElementById('alertModal');
-
-                                alertModal.querySelector('.modal-header').className = 'modal-header border-0 py-3 bg-success-subtle';
-                                alertModal.querySelector('.modal-title').textContent = 'Berhasil!';
-                                alertModal.querySelector('.alert-icon i').className = 'bi bi-check-circle-fill text-success';
-                                alertModal.querySelector('.alert-message').innerHTML = '<?= htmlspecialchars(${"message_$type"}) ?>';
-                                alertModal.querySelector('.modal-footer .btn').className = 'btn btn-success btn-lg px-4 rounded-3';
-
-                                modal.show();
-                            });
-                        </script>
-                    <?php endif; ?>
-
-                    <?php if (isset(${"error_$type"})): ?>
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const modal = new bootstrap.Modal(document.getElementById('alertModal'));
-                                const alertModal = document.getElementById('alertModal');
-
-                                alertModal.querySelector('.modal-header').className = 'modal-header border-0 py-3 bg-danger-subtle';
-                                alertModal.querySelector('.modal-title').textContent = 'Gagal!';
-                                alertModal.querySelector('.alert-icon i').className = 'bi bi-exclamation-circle-fill text-danger';
-                                alertModal.querySelector('.alert-message').innerHTML = '<?= htmlspecialchars(${"error_$type"}) ?>';
-                                alertModal.querySelector('.modal-footer .btn').className = 'btn btn-danger btn-lg px-4 rounded-3';
-
-                                modal.show();
-                            });
-                        </script>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-
-
             </div>
 
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const searchInputSOP = document.getElementById('searchInputSOP');
+                    const searchSuggestionsSOP = document.getElementById('searchSuggestionsSOP');
+                    const searchResultsSOP = document.getElementById('searchResultsSOP');
+                    const alertContainer = document.getElementById('alertContainer');
+                    const paginationContainer = document.createElement('div');
+                    paginationContainer.id = 'paginationContainer';
+                    searchResultsSOP.parentNode.insertBefore(paginationContainer, searchResultsSOP.nextSibling);
+                    let typingTimerSOP;
+                    let currentPage = 1;
+                    let totalPages = 1;
 
+                    // Function to show alert
+                    function showAlert(message, type = 'success') {
+                        const alert = document.createElement('div');
+                        alert.className = `alert alert-${type} alert-dismissible fade show`;
+                        alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                        alertContainer.appendChild(alert);
 
-        </div>
-    </div>
-    </div>
+                        // Auto dismiss after 5 seconds
+                        setTimeout(() => {
+                            alert.remove();
+                        }, 5000);
+                    }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInputSOP = document.getElementById('searchInputSOP');
-            const searchSuggestionsSOP = document.getElementById('searchSuggestionsSOP');
-            const searchResultsSOP = document.getElementById('searchResultsSOP');
-            const paginationContainer = document.createElement('div');
-            paginationContainer.id = 'paginationContainer';
-            searchResultsSOP.parentNode.insertBefore(paginationContainer, searchResultsSOP.nextSibling);
-            let typingTimerSOP;
-            let currentPage = 1;
-            let totalPages = 1;
+                    // Fungsi untuk membuat card SOP
+                    function createSopCard(sop) {
+                        let deleteButton = '';
+                        <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
+                            deleteButton = `
+                        <button class="btn btn-danger ms-2 delete-sop" data-sop-id="${sop.id}" data-sop-nomor="${sop.nomor_sop}">
+                            <i class="bi bi-trash me-1"></i> Hapus
+                        </button>
+                    `;
+                        <?php endif; ?>
 
-            // Fungsi untuk membuat card SOP
-            function createSopCard(sop) {
-                return `
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-start">
-                            <div class="me-3">
-                                <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div>
-                                        <span class="text-primary">${sop.nomor_sop}</span> | 
-                                        <span>${sop.tahun_disahkan}</span>
-                                    </div>
+                        return `
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
                                 </div>
-                                <h5 class="mb-3">${sop.judul_sop}</h5>
-                                <div>
-                                    <a href="detail_sop.php?id=${sop.id}" class="btn btn-primary">
-                                        <i class="bi bi-search me-1"></i> Selengkapnya
-                                    </a>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="text-primary">${sop.nomor_sop}</span> | 
+                                            <span>${sop.tahun_disahkan}</span>
+                                        </div>
+                                    </div>
+                                    <h5 class="mb-3">${sop.judul_sop}</h5>
+                                    <div>
+                                        <a href="detail_sop.php?id=${sop.id}" class="btn btn-primary">
+                                            <i class="bi bi-search me-1"></i> Selengkapnya
+                                        </a>
+                                        ${deleteButton}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-            }
-
-            // Fungsi untuk membuat pagination
-            function createPagination(currentPage, totalPages) {
-                let paginationHTML = '<nav><ul class="pagination justify-content-center">';
-                if (currentPage > 1) {
-                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}"> << </a></li>`;
-                }
-                for (let i = 1; i <= totalPages; i++) {
-                    paginationHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-                }
-                if (currentPage < totalPages) {
-                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}"> >> </a></li>`;
-                }
-                paginationHTML += '</ul></nav>';
-                return paginationHTML;
-            }
-
-            // Fungsi untuk memuat data SOP
-            function loadSOP(page, searchTerm = '') {
-                const url = searchTerm ? `search_sop.php?term=${encodeURIComponent(searchTerm)}&page=${page}` : `get_all_sop.php?page=${page}`;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.results.length > 0) {
-                            searchResultsSOP.innerHTML = data.results.map(sop => createSopCard(sop)).join('');
-                            paginationContainer.innerHTML = createPagination(data.currentPage, data.totalPages);
-                        } else {
-                            searchResultsSOP.innerHTML = '<div class="alert alert-info">Tidak ditemukan SOP yang sesuai dengan kata kunci.</div>';
-                            paginationContainer.innerHTML = '';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchResultsSOP.innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data.</div>';
-                        paginationContainer.innerHTML = '';
-                    });
-            }
-
-            // Handle input pencarian
-            searchInputSOP.addEventListener('input', function() {
-                clearTimeout(typingTimerSOP);
-                typingTimerSOP = setTimeout(() => {
-                    const searchTerm = this.value.trim();
-                    if (searchTerm.length > 2) {
-                        loadSOP(1, searchTerm);
-                    } else {
-                        loadSOP(1);
+                `;
                     }
-                }, 500);
-            });
 
-            // Handle klik pagination
-            paginationContainer.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    e.preventDefault();
-                    const page = e.target.getAttribute('data-page');
-                    loadSOP(page, searchInputSOP.value.trim());
-                }
-            });
+                    // Function to handle SOP deletion
+                    function deleteSOP(sopId) {
+                        fetch('delete_sop.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    id: sopId
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    showAlert('SOP berhasil dihapus');
+                                    loadSOP(currentPage, searchInputSOP.value.trim());
+                                } else {
+                                    throw new Error(data.message || 'Gagal menghapus SOP');
+                                }
+                            })
+                            .catch(error => {
+                                showAlert(error.message, 'danger');
+                            });
+                    }
 
-            // Load semua SOP saat pertama kali
-            loadSOP(1);
+                    // Handle delete button click
+                    document.addEventListener('click', function(e) {
+                        if (e.target.closest('.delete-sop')) {
+                            const button = e.target.closest('.delete-sop');
+                            const sopId = button.dataset.sopId;
+                            const sopNomor = button.dataset.sopNomor;
 
-            // Sidebar toggle functionality
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+                            if (confirm(`Apakah Anda yakin ingin menghapus SOP dengan nomor ${sopNomor}?`)) {
+                                deleteSOP(sopId);
+                            }
+                        }
+                    });
 
-            function toggleSidebar() {
-                sidebar.classList.toggle('show');
-                sidebarBackdrop.classList.toggle('show');
-            }
+                    // Fungsi untuk membuat pagination
+                    function createPagination(currentPage, totalPages) {
+                        let paginationHTML = '<nav><ul class="pagination justify-content-center">';
+                        if (currentPage > 1) {
+                            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}"> << </a></li>`;
+                        }
+                        for (let i = 1; i <= totalPages; i++) {
+                            paginationHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                        }
+                        if (currentPage < totalPages) {
+                            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}"> >> </a></li>`;
+                        }
+                        paginationHTML += '</ul></nav>';
+                        return paginationHTML;
+                    }
 
-            sidebarToggle.addEventListener('click', toggleSidebar);
-            sidebarBackdrop.addEventListener('click', toggleSidebar);
+                    // Fungsi untuk memuat data SOP
+                    function loadSOP(page, searchTerm = '') {
+                        const url = searchTerm ? `search_sop.php?term=${encodeURIComponent(searchTerm)}&page=${page}` : `get_all_sop.php?page=${page}`;
+                        fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.results.length > 0) {
+                                    searchResultsSOP.innerHTML = data.results.map(sop => createSopCard(sop)).join('');
+                                    paginationContainer.innerHTML = createPagination(data.currentPage, data.totalPages);
+                                } else {
+                                    searchResultsSOP.innerHTML = '<div class="alert alert-info">Tidak ditemukan SOP yang sesuai dengan kata kunci.</div>';
+                                    paginationContainer.innerHTML = '';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                searchResultsSOP.innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data.</div>';
+                                paginationContainer.innerHTML = '';
+                            });
+                    }
 
-            // Close sidebar when window is resized to desktop view
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) {
-                    sidebar.classList.remove('show');
-                    sidebarBackdrop.classList.remove('show');
-                }
-            });
-        });
-    </script>
+                    // Handle input pencarian
+                    searchInputSOP.addEventListener('input', function() {
+                        clearTimeout(typingTimerSOP);
+                        typingTimerSOP = setTimeout(() => {
+                            const searchTerm = this.value.trim();
+                            if (searchTerm.length > 2) {
+                                loadSOP(1, searchTerm);
+                            } else {
+                                loadSOP(1);
+                            }
+                        }, 500);
+                    });
+
+                    // Handle klik pagination
+                    paginationContainer.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'A') {
+                            e.preventDefault();
+                            const page = e.target.getAttribute('data-page');
+                            loadSOP(page, searchInputSOP.value.trim());
+                        }
+                    });
+
+                    // Load semua SOP saat pertama kali
+                    loadSOP(1);
+
+                    // Sidebar toggle functionality
+                    const sidebar = document.getElementById('sidebar');
+                    const sidebarToggle = document.getElementById('sidebarToggle');
+                    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+                    function toggleSidebar() {
+                        sidebar.classList.toggle('show');
+                        sidebarBackdrop.classList.toggle('show');
+                    }
+
+                    sidebarToggle.addEventListener('click', toggleSidebar);
+                    sidebarBackdrop.addEventListener('click', toggleSidebar);
+
+                    // Close sidebar when window is resized to desktop view
+                    window.addEventListener('resize', function() {
+                        if (window.innerWidth > 768) {
+                            sidebar.classList.remove('show');
+                            sidebarBackdrop.classList.remove('show');
+                        }
+                    });
+                });
+            </script>
 </body>
 
 </html>

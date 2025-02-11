@@ -49,8 +49,8 @@ check_login();
                         <?php endif; ?>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' || 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-check"></i>
-                            Cek Berkas
+                        <a class="nav-link dropdown-toggle text-dark <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' || 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list-check"></i> Cek Berkas
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                             <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
@@ -63,7 +63,7 @@ check_login();
                     <?php if ($role === 'ti_admin'): ?>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="add_user.php">
-                                <i class="bi bi-person-plus"></i> Tambah User
+                                <i class="bi bi-person-plus"></i> Kelola User
                             </a>
                         </li>
                     <?php endif; ?>
@@ -80,6 +80,9 @@ check_login();
                 <div class="user-welcome">
                     <h1>Selamat Datang, <?= htmlspecialchars($_SESSION['user']['username']); ?></h1>
                 </div>
+
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
 
                 <!-- Cek SK -->
                 <div class="row">
@@ -115,6 +118,7 @@ check_login();
             const searchInputSK = document.getElementById('searchInputSK');
             const searchSuggestionsSK = document.getElementById('searchSuggestionsSK');
             const searchResultsSK = document.getElementById('searchResultsSK');
+            const alertContainer = document.getElementById('alertContainer');
             const paginationContainer = document.createElement('div');
             paginationContainer.id = 'paginationContainer';
             searchResultsSK.parentNode.insertBefore(paginationContainer, searchResultsSK.nextSibling);
@@ -122,33 +126,59 @@ check_login();
             let currentPage = 1;
             let totalPages = 1;
 
+            // Function to show alert
+            function showAlert(message, type = 'success') {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alert);
+
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            }
+
             // Fungsi untuk membuat card SK
             function createSkCard(sk) {
+                let deleteButton = '';
+                <?php if ($role === 'admin_dok' || $role === 'ti_admin'): ?>
+                    deleteButton = `
+                        <button class="btn btn-danger ms-2 delete-sk" data-sk-id="${sk.id}" data-sk-nomor="${sk.nomor_sk}">
+                            <i class="bi bi-trash me-1"></i> Hapus
+                        </button>
+                    `;
+                <?php endif; ?>
+
                 return `
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-start">
-                        <div class="me-3">
-                            <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <span class="text-primary">${sk.nomor_sk}</span> | 
-                                    <span>${sk.tahun_disahkan}</span>
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="bi bi-file-text text-primary" style="font-size: 2rem;"></i>
                                 </div>
-                            </div>
-                            <h5 class="mb-3">${sk.judul_sk}</h5>
-                            <div>
-                                <a href="detail_sk.php?id=${sk.id}" class="btn btn-info btn-sm">
-                                    <i class="bi bi-search me-1"></i> Selengkapnya
-                                </a>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="text-primary">${sk.nomor_sk}</span> | 
+                                            <span>${sk.tahun_disahkan}</span>
+                                        </div>
+                                    </div>
+                                    <h5 class="mb-3">${sk.judul_sk}</h5>
+                                    <div>
+                                        <a href="detail_sk.php?id=${sk.id}" class="btn btn-primary">
+                                            <i class="bi bi-search me-1"></i> Selengkapnya
+                                        </a>
+                                        ${deleteButton}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        `;
+                `;
             }
 
             // Fungsi untuk membuat pagination
@@ -176,6 +206,8 @@ check_login();
                         if (data.results.length > 0) {
                             searchResultsSK.innerHTML = data.results.map(sk => createSkCard(sk)).join('');
                             paginationContainer.innerHTML = createPagination(data.currentPage, data.totalPages);
+                            currentPage = data.currentPage;
+                            totalPages = data.totalPages;
                         } else {
                             searchResultsSK.innerHTML = '<div class="alert alert-info">Tidak ditemukan SK yang sesuai dengan kata kunci.</div>';
                             paginationContainer.innerHTML = '';
@@ -187,6 +219,44 @@ check_login();
                         paginationContainer.innerHTML = '';
                     });
             }
+
+            // Function to handle SK deletion
+            function deleteSK(skId) {
+                fetch('delete_sk.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            id: skId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('SK berhasil dihapus');
+                            loadSK(currentPage, searchInputSK.value.trim());
+                        } else {
+                            throw new Error(data.message || 'Gagal menghapus SK');
+                        }
+                    })
+                    .catch(error => {
+                        showAlert(error.message, 'danger');
+                    });
+            }
+
+            // Handle delete button click
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-sk')) {
+                    const button = e.target.closest('.delete-sk');
+                    const skId = button.dataset.skId;
+                    const skNomor = button.dataset.skNomor;
+
+                    if (confirm(`Apakah Anda yakin ingin menghapus SK dengan nomor ${skNomor}?`)) {
+                        deleteSK(skId);
+                    }
+                }
+            });
 
             // Handle input pencarian
             searchInputSK.addEventListener('input', function() {
@@ -205,13 +275,10 @@ check_login();
             paginationContainer.addEventListener('click', function(e) {
                 if (e.target.tagName === 'A') {
                     e.preventDefault();
-                    const page = e.target.getAttribute('data-page');
+                    const page = parseInt(e.target.getAttribute('data-page'));
                     loadSK(page, searchInputSK.value.trim());
                 }
             });
-
-            // Load semua SK saat pertama kali
-            loadSK(1);
 
             // Sidebar toggle functionality
             const sidebar = document.getElementById('sidebar');
@@ -233,6 +300,9 @@ check_login();
                     sidebarBackdrop.classList.remove('show');
                 }
             });
+
+            // Load semua SK saat pertama kali
+            loadSK(1);
         });
     </script>
 </body>

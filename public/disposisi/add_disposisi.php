@@ -1,5 +1,10 @@
 <?php
 require_once '../../includes/config.php';
+require_once '../../includes/auth.php';
+check_login('sekre');
+
+$current_user_role = $_SESSION['user']['role']; // Pastikan session sudah diset saat login
+
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
@@ -20,6 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $perihal = $_POST['perihal'];
         $instruksi = $_POST['instruksi'];
         $diteruskan = $_POST['diteruskan'];
+        // Get and validate category
+        $category = $_POST['category'];
+        if (!in_array($category, ['surat_masuk', 'surat_keluar'])) {
+            throw new Exception('Kategori tidak valid');
+        }
+        // Format category for display
+        $category_display = $category === 'surat_masuk' ? 'Surat Masuk' : 'Surat Keluar';
         $db_path = null;
 
         // Handle file upload
@@ -53,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Insert into database using PDO
-        $query = "INSERT INTO disposisi_surat (no, kode, tanggal_surat, tanggal_masuk, nomer_surat, dari, perihal, instruksi, diteruskan, file_path) 
-                  VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path)";
+        $query = "INSERT INTO disposisi_surat (no, kode, tanggal_surat, tanggal_masuk, nomer_surat, dari, perihal, instruksi, diteruskan, file_path, category) 
+          VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path, :category)";
 
         $stmt = $pdo->prepare($query);
         $stmt->execute([
@@ -67,7 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ':perihal' => $perihal,
             ':instruksi' => $instruksi,
             ':diteruskan' => $diteruskan,
-            ':file_path' => $db_path
+            ':file_path' => $db_path,
+            ':category' => $category
         ]);
 
         // Commit transaction
@@ -216,6 +229,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <div class="form-group">
                                         <label for="instruksi" class="form-label">Instruksi</label>
                                         <input type="text" class="form-control" id="instruksi" name="instruksi">
+                                    </div>
+                                </div>
+
+                                <!-- Kategori Surat -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="category" class="form-label">Kategori Surat</label>
+                                        <select class="form-select" id="category" name="category" required>
+                                            <option value="">Pilih Kategori</option>
+                                            <option value="surat_masuk">Surat Masuk</option>
+                                            <option value="surat_keluar">Surat Keluar</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Harap pilih kategori surat
+                                        </div>
                                     </div>
                                 </div>
 
