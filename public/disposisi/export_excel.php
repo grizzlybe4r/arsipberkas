@@ -22,8 +22,8 @@ try {
         ->setKeywords('disposisi surat export')
         ->setCategory('Data Export');
 
-    // Add header row
-    $headers = ['No', 'Kode', 'Tanggal Surat', 'Tanggal Masuk', 'Nomor Surat', 'Dari', 'Perihal', 'Instruksi', 'Diteruskan'];
+    // Add header row with new Kategori column
+    $headers = ['No', 'Kode', 'Kategori', 'Tanggal Surat', 'Tanggal Masuk', 'Nomor Surat', 'Dari', 'Perihal', 'Instruksi', 'Diteruskan'];
     $col = 'A';
     foreach ($headers as $header) {
         $sheet->setCellValue($col . '1', $header);
@@ -50,7 +50,7 @@ try {
             ],
         ],
     ];
-    $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+    $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
     $sheet->getRowDimension('1')->setRowHeight(30);
 
     // Build base query
@@ -69,6 +69,17 @@ try {
         $params[] = $_GET['tahun'];
     }
 
+    // Add category filter
+    if (isset($_GET['kategori']) && $_GET['kategori'] !== '') {
+        if ($_GET['kategori'] === 'BI') {
+            $where_conditions[] = "kode = '1'";
+        } elseif ($_GET['kategori'] === 'OJK') {
+            $where_conditions[] = "kode = '2'";
+        } elseif ($_GET['kategori'] === 'UMUM') {
+            $where_conditions[] = "kode NOT IN ('1', '2')";
+        }
+    }
+
     // Add WHERE clause if conditions exist
     if (!empty($where_conditions)) {
         $query .= " WHERE " . implode(" AND ", $where_conditions);
@@ -83,19 +94,30 @@ try {
 
     // Fetch and write data
     $row = 2;
-    $nomor = 1; // Inisialisasi nomor urut mulai dari 1
+    $nomor = 1;
     while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $sheet->setCellValue('A' . $row, $nomor); // Menggunakan nomor urut baru
+        // Determine category based on kode
+        $kategori = '';
+        if ($data['kode'] === '1') {
+            $kategori = 'Surat BI';
+        } elseif ($data['kode'] === '2') {
+            $kategori = 'Surat OJK';
+        } else {
+            $kategori = 'Surat Umum';
+        }
+
+        $sheet->setCellValue('A' . $row, $nomor);
         $sheet->setCellValue('B' . $row, $data['kode']);
-        $sheet->setCellValue('C' . $row, $data['tanggal_surat']);
-        $sheet->setCellValue('D' . $row, $data['tanggal_masuk']);
-        $sheet->setCellValue('E' . $row, $data['nomer_surat']);
-        $sheet->setCellValue('F' . $row, $data['dari']);
-        $sheet->setCellValue('G' . $row, $data['perihal']);
-        $sheet->setCellValue('H' . $row, $data['instruksi']);
-        $sheet->setCellValue('I' . $row, $data['diteruskan']);
+        $sheet->setCellValue('C' . $row, $kategori);
+        $sheet->setCellValue('D' . $row, $data['tanggal_surat']);
+        $sheet->setCellValue('E' . $row, $data['tanggal_masuk']);
+        $sheet->setCellValue('F' . $row, $data['nomer_surat']);
+        $sheet->setCellValue('G' . $row, $data['dari']);
+        $sheet->setCellValue('H' . $row, $data['perihal']);
+        $sheet->setCellValue('I' . $row, $data['instruksi']);
+        $sheet->setCellValue('J' . $row, $data['diteruskan']);
         $row++;
-        $nomor++; // Increment nomor urut
+        $nomor++;
     }
 
     // Style the data rows
@@ -110,19 +132,23 @@ try {
                 'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ];
-        $sheet->getStyle('A2:I' . ($row - 1))->applyFromArray($dataStyle);
+        $sheet->getStyle('A2:J' . ($row - 1))->applyFromArray($dataStyle);
     }
 
-    // Center align the No column
+    // Center align the No column and Category column
     $sheet->getStyle('A2:A' . ($row - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    $sheet->getStyle('C2:C' . ($row - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
     // Auto-size columns
-    foreach (range('A', 'I') as $col) {
+    foreach (range('A', 'J') as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
 
     // Generate filename with filter info
     $filename = 'Data_Disposisi';
+    if (isset($_GET['kategori']) && $_GET['kategori'] !== '') {
+        $filename .= '_' . $_GET['kategori'];
+    }
     if (isset($_GET['bulan']) && $_GET['bulan'] !== '') {
         $bulan_list = [
             '01' => 'Januari',

@@ -50,7 +50,8 @@ check_login();
                             <li><a class="dropdown-item" href="cek_sk.php">Cek SK</a></li>
                             <li><a class="dropdown-item" href="cek_sop.php">Cek SOP</a></li>
                             <?php if ($role !== 'sekre'): ?>
-                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">Disposisi Surat</a></li>
+                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">Disposisi Surat Masuk</a></li>
+                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi_keluar.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi_keluar.php">Disposisi Surat Keluar</a></li>
                             <?php endif; ?>
                         </ul>
                     </li>

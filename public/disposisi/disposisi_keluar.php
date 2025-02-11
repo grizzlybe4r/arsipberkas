@@ -12,6 +12,8 @@ $offset = ($page - 1) * $rows_per_page;
 // Get filter parameters
 $selected_bulan = isset($_GET['bulan']) ? $_GET['bulan'] : '';
 $selected_tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
+$selected_kategori = isset($_GET['kategori']) ? $_GET['kategori'] : '';
+$search_query = isset($_GET['search']) ? $_GET['search'] : ''; // Tambahkan ini
 
 try {
     // Build the base query
@@ -26,6 +28,23 @@ try {
     if (!empty($selected_tahun)) {
         $base_query .= " AND YEAR(tanggal) = :tahun";
         $params[':tahun'] = $selected_tahun;
+    }
+
+    if (!empty($selected_kategori)) {
+        if ($selected_kategori === 'BI') {
+            $base_query .= " AND kode = '1'";
+        } elseif ($selected_kategori === 'OJK') {
+            $base_query .= " AND kode = '2'";
+        } elseif ($selected_kategori === 'UMUM') {
+            $base_query .= " AND kode NOT IN ('1', '2')";
+        }
+    }
+    // Tambahkan kondisi pencarian
+    if (!empty($search_query)) {
+        $base_query .= " AND (nomor_surat LIKE :search 
+                    OR perihal LIKE :search 
+                    OR ke LIKE :search)";
+        $params[':search'] = "%$search_query%";
     }
 
     // Get total rows for pagination
@@ -127,7 +146,7 @@ function getNamaBulan($bulan)
                     <li class="nav-item">
                         <?php if ($role === 'sekre'): ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi.php">
-                                <i class="bi bi-envelope-arrow-down-fill"></i> Disposisi Surat Masuk
+                                <i class="bi bi-envelope-arrow-down"></i> Disposisi Surat Masuk
                             </a>
                         <?php else: ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="../dashboard.php">
@@ -138,7 +157,7 @@ function getNamaBulan($bulan)
                     <li class="nav-item">
                         <?php if ($role === 'sekre'): ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi_keluar.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi_keluar.php">
-                                <i class="bi bi-envelope-arrow-up-fill"></i> Disposisi Surat Keluar
+                                <i class="bi bi-envelope-arrow-up"></i> Disposisi Surat Keluar
                             </a>
                         <?php endif; ?>
                     </li>
@@ -150,7 +169,8 @@ function getNamaBulan($bulan)
                             <li><a class="dropdown-item" href="../cek_sk.php">Cek SK</a></li>
                             <li><a class="dropdown-item" href="../cek_sop.php">Cek SOP</a></li>
                             <?php if ($role !== 'sekre'): ?>
-                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi.php">Disposisi Surat</a></li>
+                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi.php">Disposisi Surat Masuk</a></li>
+                                <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi_keluar.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi_keluar.php">Disposisi Surat Keluar</a></li>
                             <?php endif; ?>
                         </ul>
                     </li>
@@ -176,7 +196,7 @@ function getNamaBulan($bulan)
                 </div>
                 <div class="container-fluid ">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h1 class="h2">Disposisi Surat</h1>
+                        <h1 class="h2">Disposisi Surat Keluar</h1>
                         <div class="d-flex gap-2">
                             <?php if ($role === 'sekre'): ?>
                                 <a href="export_excel.php<?= !empty($_GET) ? '?' . http_build_query($_GET) : '' ?>" class="btn btn-success">
@@ -205,7 +225,7 @@ function getNamaBulan($bulan)
                                             <option value="500" <?= $rows_per_page == 500 ? 'selected' : '' ?>>500</option>
                                             <option value="1000" <?= $rows_per_page == 1000 ? 'selected' : '' ?>>1000</option>
                                         </select>
-                                        <span class="ms-2">entries</span>
+                                        <span class="ms-2">baris</span>
                                     </form>
                                 </div>
                                 <div class="col-md-4">
@@ -216,7 +236,7 @@ function getNamaBulan($bulan)
 
                                         <div class="flex-grow-1">
                                             <label for="bulan" class="form-label">Filter Bulan:</label>
-                                            <select name="bulan" id="bulan" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                                            <select name="bulan" id="bulan" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
                                                 <option value="">Semua Bulan</option>
                                                 <?php
                                                 $bulan_list = [
@@ -245,7 +265,7 @@ function getNamaBulan($bulan)
 
                                         <div class="flex-grow-1">
                                             <label for="tahun" class="form-label">Tahun:</label>
-                                            <select name="tahun" id="tahun" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                                            <select name="tahun" id="tahun" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
                                                 <?php
                                                 $current_year = date('Y');
                                                 $year_query = "SELECT DISTINCT YEAR(tanggal) as year FROM disposisi_keluar ORDER BY year DESC";
@@ -261,27 +281,76 @@ function getNamaBulan($bulan)
                                                 ?>
                                             </select>
                                         </div>
+
+                                        <div class="flex-grow-1">
+                                            <label for="kategori" class="form-label">Kategori Surat:</label>
+                                            <select name="kategori" id="kategori" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
+                                                <option value="">Semua Kategori</option>
+                                                <option value="BI" <?= $selected_kategori == 'BI' ? 'selected' : '' ?>>Surat Masuk BI</option>
+                                                <option value="OJK" <?= $selected_kategori == 'OJK' ? 'selected' : '' ?>>Surat Masuk OJK</option>
+                                                <option value="UMUM" <?= $selected_kategori == 'UMUM' ? 'selected' : '' ?>>Surat Masuk Umum</option>
+                                            </select>
+                                        </div>
                                     </form>
 
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex justify-content-end">
-                                        <?php if (!empty($selected_bulan)): ?>
+                                        <?php if (!empty($selected_bulan) || !empty($selected_kategori) || !empty($search_query)): ?>
                                             <a href="?tahun=<?= $selected_tahun ?>" class="btn btn-outline-secondary">
                                                 <i class="fas fa-times me-1"></i>
-                                                Reset Filter
+                                                Reset Semua Filter
                                             </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="table-responsive">
+                            <form method="get" class="d-flex gap-2 mt-3" id="searchForm">
+                                <!-- Hidden inputs untuk mempertahankan filter lain -->
+                                <input type="hidden" name="rows" value="<?= isset($_GET['rows']) ? $_GET['rows'] : 10 ?>">
+                                <input type="hidden" name="page" value="1">
+                                <input type="hidden" name="bulan" value="<?= $selected_bulan ?>">
+                                <input type="hidden" name="tahun" value="<?= $selected_tahun ?>">
+                                <input type="hidden" name="kategori" value="<?= $selected_kategori ?>">
+
+                                <div class="input-group">
+                                    <input type="text"
+                                        class="form-control"
+                                        placeholder="Cari surat..."
+                                        name="search"
+                                        value="<?= htmlspecialchars($search_query) ?>"
+                                        aria-label="Search">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <?php if (!empty($search_query)): ?>
+                                        <a href="<?= '?' . http_build_query(array_diff_key($_GET, ['search' => ''])) ?>"
+                                            class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </form>
+                            <!-- Tampilkan info pencarian jika ada -->
+                            <?php if (!empty($search_query)): ?>
+                                <div class="alert alert-info">
+                                    Menampilkan hasil pencarian untuk: "<?= htmlspecialchars($search_query) ?>"
+                                    <?php if ($total_rows > 0): ?>
+                                        (<?= $total_rows ?> hasil ditemukan)
+                                    <?php else: ?>
+                                        (Tidak ada hasil ditemukan)
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="table-responsive mt-3">
                                 <table class="table table-hover table-bordered align-middle">
                                     <thead class="table-light">
                                         <tr>
                                             <th class="text-center">No</th>
                                             <th>Kode</th>
+                                            <th>Kategori</th>
                                             <th>Tanggal</th>
                                             <th>Nomor Surat</th>
                                             <th>Perihal</th>
@@ -302,6 +371,18 @@ function getNamaBulan($bulan)
                                             <tr>
                                                 <td class="text-center"><?= $nomor++ ?></td>
                                                 <td><?= htmlspecialchars($row['kode'] ?? '') ?></td>
+                                                <td>
+                                                    <?php
+                                                    $kode = $row['kode'] ?? '';
+                                                    if ($kode === '1') {
+                                                        echo 'Surat BI';
+                                                    } elseif ($kode === '2') {
+                                                        echo 'Surat OJK';
+                                                    } else {
+                                                        echo 'Surat Umum';
+                                                    }
+                                                    ?>
+                                                </td>
                                                 <td><?= htmlspecialchars($row['tanggal'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($row['nomor_surat'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($row['perihal'] ?? '') ?></td>
@@ -385,13 +466,13 @@ function getNamaBulan($bulan)
                                     </select>
                                 </div>
                             </nav>
-
-
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Bootstrap JS and dependencies -->
@@ -534,6 +615,24 @@ function getNamaBulan($bulan)
                     sidebar.classList.remove('show');
                     sidebarBackdrop.classList.remove('show');
                 }
+            });
+
+            // Handle search form submission
+            const searchForm = document.getElementById('searchForm');
+            const searchInput = searchForm.querySelector('input[name="search"]');
+
+            searchForm.addEventListener('submit', function(e) {
+                if (searchInput.value.trim() === '') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
+
+            // Auto-submit form when filter changes
+            document.querySelectorAll('select[name="bulan"], select[name="tahun"], select[name="kategori"]').forEach(select => {
+                select.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
             });
         });
     </script>

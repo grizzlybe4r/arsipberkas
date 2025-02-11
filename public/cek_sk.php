@@ -13,6 +13,7 @@ check_login();
     <title>Cek SK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" type="text/css" href="assets/style.css">
 </head>
 
@@ -40,11 +41,18 @@ check_login();
                     <li class="nav-item">
                         <?php if ($role === 'sekre'): ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">
-                                <i class="bi bi-speedometer2"></i> Dashboard
+                                <i class="bi bi-envelope-arrow-down"></i> Disposisi Surat Masuk
                             </a>
                         <?php else: ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="dashboard.php">
                                 <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        <?php endif; ?>
+                    </li>
+                    <li class="nav-item">
+                        <?php if ($role === 'sekre'): ?>
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi_keluar.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi_keluar.php">
+                                <i class="bi bi-envelope-arrow-up"></i> Disposisi Surat Keluar
                             </a>
                         <?php endif; ?>
                     </li>
@@ -56,7 +64,8 @@ check_login();
                             <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sk.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sk.php">Cek SK</a></li>
                             <li><a class="dropdown-item <?php echo basename($_SERVER['PHP_SELF']) == 'cek_sop.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="cek_sop.php">Cek SOP</a></li>
                             <?php if ($role !== 'sekre'): ?>
-                                <li><a class="dropdown-item" href="disposisi/disposisi.php">Disposisi Surat</a></li>
+                                <li><a class="dropdown-item" href="disposisi/disposisi.php">Disposisi Surat Masuk</a></li>
+                                <li><a class="dropdown-item" href="disposisi/disposisi_keluar.php">Disposisi Surat Keluar</a></li>
                             <?php endif; ?>
                         </ul>
                     </li>
