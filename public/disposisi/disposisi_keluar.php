@@ -13,7 +13,7 @@ $offset = ($page - 1) * $rows_per_page;
 $selected_bulan = isset($_GET['bulan']) ? $_GET['bulan'] : '';
 $selected_tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 $selected_kategori = isset($_GET['kategori']) ? $_GET['kategori'] : '';
-$search_query = isset($_GET['search']) ? $_GET['search'] : ''; // Tambahkan ini
+$search_query = isset($_GET['search']) ? $_GET['search'] : '';
 
 try {
     // Build the base query
@@ -69,10 +69,11 @@ try {
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Modify export URL to include current filters
-    $export_url = "export_excel.php";
+    $export_url = "export_excel_keluar.php";
     $filter_params = [];
     if (!empty($selected_bulan)) $filter_params[] = "bulan=" . $selected_bulan;
     if (!empty($selected_tahun)) $filter_params[] = "tahun=" . $selected_tahun;
+    if (!empty($selected_kategori)) $filter_params[] = "kategori=" . urlencode($selected_kategori);
     if (!empty($filter_params)) {
         $export_url .= "?" . implode("&", $filter_params);
     }
@@ -80,7 +81,6 @@ try {
     echo "Error: " . $e->getMessage();
     exit();
 }
-
 // Function to get month name in Indonesian
 function getNamaBulan($bulan)
 {
@@ -162,7 +162,7 @@ function getNamaBulan($bulan)
                         <?php endif; ?>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?php echo (($role !== 'sekre' && basename($_SERVER['PHP_SELF']) == 'disposisi.php') || in_array(basename($_SERVER['PHP_SELF']), ['cek_sk.php', 'cek_sop.php'])) ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle <?php echo (($role !== 'sekre' && basename($_SERVER['PHP_SELF']) == 'disposisi_keluar.php') || in_array(basename($_SERVER['PHP_SELF']), ['cek_sk.php', 'cek_sop.php'])) ? 'active text-white bg-primary' : 'text-dark'; ?>" href="#" id="dropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-list-check"></i> Cek Berkas
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
@@ -199,7 +199,7 @@ function getNamaBulan($bulan)
                         <h1 class="h2">Disposisi Surat Keluar</h1>
                         <div class="d-flex gap-2">
                             <?php if ($role === 'sekre'): ?>
-                                <a href="export_excel.php<?= !empty($_GET) ? '?' . http_build_query($_GET) : '' ?>" class="btn btn-success">
+                                <a href="export_excel_keluar.php<?= !empty($_GET) ? '?' . http_build_query($_GET) : '' ?>" class="btn btn-success">
                                     <i class="fas fa-file-excel me-1"></i> Export Excel
                                 </a>
 
@@ -228,15 +228,15 @@ function getNamaBulan($bulan)
                                         <span class="ms-2">baris</span>
                                     </form>
                                 </div>
-                                <div class="col-md-4">
-                                    <form method="get" id="filterForm" class="d-flex align-items-end gap-2">
+                                <div class="col-md-6">
+                                    <form method="get" id="filterForm" class="d-flex flex-wrap align-items-end gap-2">
                                         <!-- Hidden input untuk mempertahankan filter lain -->
                                         <input type="hidden" name="rows" value="<?= isset($_GET['rows']) ? $_GET['rows'] : 10 ?>">
                                         <input type="hidden" name="page" value="<?= isset($_GET['page']) ? $_GET['page'] : 1 ?>">
 
                                         <div class="flex-grow-1">
-                                            <label for="bulan" class="form-label">Filter Bulan:</label>
-                                            <select name="bulan" id="bulan" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
+                                            <label for="bulan" class="form-label">Bulan:</label>
+                                            <select name="bulan" id="bulan" class="form-select w-100" onchange="document.getElementById('filterForm').submit();">
                                                 <option value="">Semua Bulan</option>
                                                 <?php
                                                 $bulan_list = [
@@ -265,7 +265,7 @@ function getNamaBulan($bulan)
 
                                         <div class="flex-grow-1">
                                             <label for="tahun" class="form-label">Tahun:</label>
-                                            <select name="tahun" id="tahun" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
+                                            <select name="tahun" id="tahun" class="form-select w-100" onchange="document.getElementById('filterForm').submit();">
                                                 <?php
                                                 $current_year = date('Y');
                                                 $year_query = "SELECT DISTINCT YEAR(tanggal) as year FROM disposisi_keluar ORDER BY year DESC";
@@ -284,26 +284,27 @@ function getNamaBulan($bulan)
 
                                         <div class="flex-grow-1">
                                             <label for="kategori" class="form-label">Kategori Surat:</label>
-                                            <select name="kategori" id="kategori" class="form-select w-auto" onchange="document.getElementById('filterForm').submit();">
+                                            <select name="kategori" id="kategori" class="form-select w-100" onchange="document.getElementById('filterForm').submit();">
                                                 <option value="">Semua Kategori</option>
-                                                <option value="BI" <?= $selected_kategori == 'BI' ? 'selected' : '' ?>>Surat Masuk BI</option>
-                                                <option value="OJK" <?= $selected_kategori == 'OJK' ? 'selected' : '' ?>>Surat Masuk OJK</option>
-                                                <option value="UMUM" <?= $selected_kategori == 'UMUM' ? 'selected' : '' ?>>Surat Masuk Umum</option>
+                                                <option value="BI" <?= $selected_kategori == 'BI' ? 'selected' : '' ?>>Surat Keluar BI</option>
+                                                <option value="OJK" <?= $selected_kategori == 'OJK' ? 'selected' : '' ?>>Surat Keluar OJK</option>
+                                                <option value="UMUM" <?= $selected_kategori == 'UMUM' ? 'selected' : '' ?>>Surat Keluar Umum</option>
                                             </select>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-end">
+                                                <?php if (!empty($selected_bulan) || !empty($selected_kategori) || !empty($search_query)): ?>
+                                                    <a href="?tahun=<?= $selected_tahun ?>" class="btn btn-outline-secondary">
+                                                        <i class="fas fa-times me-1"></i>
+                                                        Reset Filter
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </form>
 
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="d-flex justify-content-end">
-                                        <?php if (!empty($selected_bulan) || !empty($selected_kategori) || !empty($search_query)): ?>
-                                            <a href="?tahun=<?= $selected_tahun ?>" class="btn btn-outline-secondary">
-                                                <i class="fas fa-times me-1"></i>
-                                                Reset Semua Filter
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
+
                             </div>
 
                             <form method="get" class="d-flex gap-2 mt-3" id="searchForm">
@@ -431,29 +432,70 @@ function getNamaBulan($bulan)
                             </div>
 
                             <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center d-none d-md-flex mb-0">
+                                <!-- Pagination untuk Desktop -->
+                                <ul class="pagination justify-content-center d-none d-md-flex mb-0" id="pagination">
                                     <?php
                                     // Ambil parameter filter yang ada
                                     $query_params = $_GET;
                                     unset($query_params['page']); // Hapus parameter page agar bisa diperbarui
 
-                                    for ($i = 1; $i <= $total_pages; $i++):
-                                        // Tambahkan page ke query parameter
+                                    // Tombol Previous
+                                    if ($page > 1):
+                                        $query_params['page'] = $page - 1;
+                                        $prev_url = '?' . http_build_query($query_params);
+                                    ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="<?= $prev_url ?>" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+
+                                    <?php
+                                    // Tentukan range halaman yang akan ditampilkan
+                                    $start = max(1, $page - 2); // Mulai dari halaman saat ini - 2
+                                    $end = min($total_pages, $page + 2); // Sampai halaman saat ini + 2
+
+                                    // Jika halaman saat ini dekat dengan awal, tampilkan 5 halaman pertama
+                                    if ($page <= 3) {
+                                        $start = 1;
+                                        $end = min(5, $total_pages);
+                                    }
+
+                                    // Jika halaman saat ini dekat dengan akhir, tampilkan 5 halaman terakhir
+                                    if ($page >= $total_pages - 2) {
+                                        $start = max(1, $total_pages - 4);
+                                        $end = $total_pages;
+                                    }
+
+                                    // Tampilkan tombol pagination dalam range yang ditentukan
+                                    for ($i = $start; $i <= $end; $i++):
                                         $query_params['page'] = $i;
-                                        // Bangun URL dengan semua parameter yang ada
                                         $page_url = '?' . http_build_query($query_params);
                                     ?>
                                         <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                            <a class="page-link" href="<?= $page_url ?>">
+                                            <a class="page-link" href="<?= $page_url ?>" data-page="<?= $i ?>">
                                                 <?= $i ?>
                                             </a>
                                         </li>
                                     <?php endfor; ?>
+
+                                    <!-- Tombol Next -->
+                                    <?php if ($page < $total_pages):
+                                        $query_params['page'] = $page + 1;
+                                        $next_url = '?' . http_build_query($query_params);
+                                    ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="<?= $next_url ?>" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
                                 </ul>
 
                                 <!-- Dropdown Pagination untuk Mobile -->
                                 <div class="d-md-none text-center">
-                                    <select class="form-select w-auto mx-auto" onchange="location = this.value;">
+                                    <select class="form-select w-50 mx-auto" onchange="location = this.value;">
                                         <?php
                                         for ($i = 1; $i <= $total_pages; $i++):
                                             $query_params['page'] = $i;
@@ -590,6 +632,42 @@ function getNamaBulan($bulan)
                 }
             }
         });
+
+        // Fungsi untuk memuat konten melalui AJAX
+        function loadPage(url) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    // Update konten halaman tanpa reload
+                    document.body.innerHTML = data;
+                    // Update URL di address bar
+                    window.history.pushState({}, '', url);
+                    // Pasang ulang event listener setelah konten baru dimuat
+                    attachPaginationListener();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Fungsi untuk memasang event listener pada pagination
+        function attachPaginationListener() {
+            const pagination = document.getElementById('pagination');
+            if (pagination) {
+                pagination.addEventListener('click', function(event) {
+                    if (event.target.tagName === 'A') {
+                        event.preventDefault(); // Mencegah perilaku default
+                        const url = event.target.getAttribute('href'); // Ambil URL
+                        loadPage(url); // Muat halaman baru
+                    }
+                });
+            }
+        }
+
+        // Pasang event listener saat halaman pertama kali dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            attachPaginationListener();
+        });
+
+
 
         // Reset zoom when modal is closed
         imagePreviewModal.addEventListener('hidden.bs.modal', function() {

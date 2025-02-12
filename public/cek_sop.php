@@ -14,6 +14,7 @@ check_login();
     <title>Cek SOP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" type="text/css" href="assets/style.css">
 </head>
 
@@ -41,7 +42,7 @@ check_login();
                     <li class="nav-item">
                         <?php if ($role === 'sekre'): ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi.php">
-                                <i class="bi bi-speedometer2"></i> Disposisi Surat Masuk
+                                <i class="bi bi-envelope-arrow-down"></i> Disposisi Surat Masuk
                             </a>
                         <?php else: ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="dashboard.php">
@@ -52,7 +53,7 @@ check_login();
                     <li class="nav-item">
                         <?php if ($role === 'sekre'): ?>
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'disposisi/disposisi_keluar.php' ? 'active text-white bg-primary' : 'text-dark'; ?>" href="disposisi/disposisi_keluar.php">
-                                <i class="bi bi-envelope-arrow-up-fill"></i> Disposisi Surat Keluar
+                                <i class="bi bi-envelope-arrow-up"></i> Disposisi Surat Keluar
                             </a>
                         <?php endif; ?>
                     </li>

@@ -220,14 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <div class="form-group">
                                         <label for="perihal" class="form-label">Perihal</label>
                                         <input type="text" class="form-control" id="perihal" name="perihal"
-                                            value="<?= htmlspecialchars($data['perihal']) ?>">
+                                            value="<?= htmlspecialchars($data['perihal'] ?? '') ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="diteruskan" class="form-label">Diteruskan Kepada</label>
                                         <input type="text" class="form-control" id="diteruskan" name="diteruskan"
-                                            value="<?= htmlspecialchars($data['diteruskan']) ?>">
+                                            value="<?= htmlspecialchars($data['diteruskan'] ?? '') ?>">
+
 
                                     </div>
                                 </div>
@@ -237,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <div class="form-group">
                                         <label for="instruksi" class="form-label">Instruksi</label>
                                         <input type="text" class="form-control" id="instruksi" name="instruksi"
-                                            value="<?= htmlspecialchars($data['instruksi']) ?>">
+                                            value="<?= htmlspecialchars($data['instruksi'] ?? '') ?>">
                                     </div>
                                 </div>
 

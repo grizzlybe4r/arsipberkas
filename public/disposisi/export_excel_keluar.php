@@ -23,7 +23,7 @@ try {
         ->setCategory('Data Export');
 
     // Add header row with new Kategori column
-    $headers = ['No', 'Kode', 'Kategori', 'Tanggal Surat', 'Tanggal Masuk', 'Nomor Surat', 'Dari', 'Perihal', 'Instruksi', 'Diteruskan'];
+    $headers = ['No', 'Kode', 'Kategori', 'Tanggal', 'Nomor Surat', 'Perihal', 'Ke'];
     $col = 'A';
     foreach ($headers as $header) {
         $sheet->setCellValue($col . '1', $header);
@@ -50,22 +50,22 @@ try {
             ],
         ],
     ];
-    $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+    $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
     $sheet->getRowDimension('1')->setRowHeight(30);
 
     // Build base query
-    $query = "SELECT * FROM disposisi_surat";
+    $query = "SELECT * FROM disposisi_keluar";
     $params = [];
     $where_conditions = [];
 
     // Add filter conditions
     if (isset($_GET['bulan']) && $_GET['bulan'] !== '') {
-        $where_conditions[] = "MONTH(tanggal_masuk) = ?";
+        $where_conditions[] = "MONTH(tanggal) = ?";
         $params[] = $_GET['bulan'];
     }
 
     if (isset($_GET['tahun']) && $_GET['tahun'] !== '') {
-        $where_conditions[] = "YEAR(tanggal_masuk) = ?";
+        $where_conditions[] = "YEAR(tanggal) = ?";
         $params[] = $_GET['tahun'];
     }
 
@@ -86,7 +86,7 @@ try {
     }
 
     // Add ORDER BY
-    $query .= " ORDER BY tanggal_masuk DESC, id DESC";
+    $query .= " ORDER BY tanggal DESC, id DESC";
 
     // Prepare and execute query
     $stmt = $pdo->prepare($query);
@@ -109,13 +109,10 @@ try {
         $sheet->setCellValue('A' . $row, $nomor);
         $sheet->setCellValue('B' . $row, $data['kode']);
         $sheet->setCellValue('C' . $row, $kategori);
-        $sheet->setCellValue('D' . $row, $data['tanggal_surat']);
-        $sheet->setCellValue('E' . $row, $data['tanggal_masuk']);
-        $sheet->setCellValue('F' . $row, $data['nomer_surat']);
-        $sheet->setCellValue('G' . $row, $data['dari']);
-        $sheet->setCellValue('H' . $row, $data['perihal']);
-        $sheet->setCellValue('I' . $row, $data['instruksi']);
-        $sheet->setCellValue('J' . $row, $data['diteruskan']);
+        $sheet->setCellValue('D' . $row, $data['tanggal']);
+        $sheet->setCellValue('E' . $row, $data['nomor_surat']);
+        $sheet->setCellValue('F' . $row, $data['perihal']);
+        $sheet->setCellValue('G' . $row, $data['ke']);
         $row++;
         $nomor++;
     }
@@ -132,7 +129,7 @@ try {
                 'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ];
-        $sheet->getStyle('A2:J' . ($row - 1))->applyFromArray($dataStyle);
+        $sheet->getStyle('A2:G' . ($row - 1))->applyFromArray($dataStyle);
     }
 
     // Center align the No column and Category column
@@ -145,7 +142,7 @@ try {
     }
 
     // Generate filename with filter info
-    $filename = 'Data_Disposisi';
+    $filename = 'Data_Disposisi_Keluar';
     if (isset($_GET['kategori']) && $_GET['kategori'] !== '') {
         $filename .= '_' . $_GET['kategori'];
     }
