@@ -99,7 +99,7 @@ check_login();
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-primary text-white d-flex align-items-center">
                                 <i class="bi bi-search me-2"></i>
-                                <h5 class="card-title mb-0">Cek SK</h5>
+                                <h3 class="card-title mb-0">Cek SK</h3>
                             </div>
                             <div class="card-body p-4">
                                 <div class="search-container">
@@ -289,7 +289,6 @@ check_login();
                 }
             });
 
-            // Sidebar toggle functionality
             const sidebar = document.getElementById('sidebar');
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -297,16 +296,24 @@ check_login();
             function toggleSidebar() {
                 sidebar.classList.toggle('show');
                 sidebarBackdrop.classList.toggle('show');
+
+                // Sembunyikan tombol hanya jika layar ≤ 768px
+                if (window.innerWidth <= 768) {
+                    sidebarToggle.style.display = sidebar.classList.contains('show') ? 'none' : 'block';
+                }
             }
 
             sidebarToggle.addEventListener('click', toggleSidebar);
             sidebarBackdrop.addEventListener('click', toggleSidebar);
 
-            // Close sidebar when window is resized to desktop view
+            // Menampilkan kembali tombol saat sidebar ditutup atau layar diperbesar
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 768) {
                     sidebar.classList.remove('show');
                     sidebarBackdrop.classList.remove('show');
+                    sidebarToggle.style.display = "block"; // Pastikan tombol selalu muncul di desktop
+                } else if (!sidebar.classList.contains('show')) {
+                    sidebarToggle.style.display = "block"; // Jika sidebar tertutup di mobile, tampilkan kembali tombol
                 }
             });
 

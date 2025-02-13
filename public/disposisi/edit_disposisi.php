@@ -3,7 +3,10 @@ require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
 check_login('sekre');
 
-// Pastikan ada parameter ID
+// Define network path for PDF uploads
+define('NETWORK_PDF_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+define('LOCAL_IMAGE_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: disposisi.php");
     exit;
@@ -11,7 +14,6 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
-// Ambil data berdasarkan ID
 $stmt = $pdo->prepare("SELECT * FROM disposisi_surat WHERE id = :id");
 $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 $stmt->execute();
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $pdo->beginTransaction();
 
-        // Validasi input
+        // Validate input
         $kode = $_POST['kode'];
         $tanggal_surat = $_POST['tanggal_surat'];
         $tanggal_masuk = $_POST['tanggal_masuk'];
@@ -37,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $diteruskan = $_POST['diteruskan'];
         $db_path = $data['file_path'];
 
-        // Handle file upload jika ada
+        // Handle file upload if new file is provided
         if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
             $file = $_FILES['file'];
             $file_type = $file['type'];
@@ -48,48 +50,83 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid() . '.' . $ext;
-            $subdir = $file_type == 'application/pdf' ? 'pdf' : 'images';
-            $upload_path = UPLOAD_DIR . $subdir . '/' . $filename;
-            $db_path = UPLOAD_URL . $subdir . '/' . $filename;
 
-            if (!is_dir(UPLOAD_DIR . $subdir)) {
-                mkdir(UPLOAD_DIR . $subdir, 0755, true);
+            // Handle upload based on file type
+            if ($file_type == 'application/pdf') {
+                // Create network directory if doesn't exist
+                if (!is_dir(NETWORK_PDF_PATH)) {
+                    if (!mkdir(NETWORK_PDF_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori network');
+                    }
+                }
+
+                $upload_path = NETWORK_PDF_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
+            } else {
+                // For images, use local storage
+                if (!is_dir(LOCAL_IMAGE_PATH)) {
+                    if (!mkdir(LOCAL_IMAGE_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori lokal');
+                    }
+                }
+
+                $upload_path = LOCAL_IMAGE_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
             }
 
+            // Delete old file if exists
+            if (!empty($data['file_path'])) {
+                if (strpos($data['file_path'], 'DISPOSISI SURAT') !== false) {
+                    // Old file is in network path
+                    @unlink($data['file_path']);
+                } else {
+                    // Old file is in local path
+                    @unlink(UPLOAD_DIR . str_replace(UPLOAD_URL, '', $data['file_path']));
+                }
+            }
+
+            // Move uploaded file
             if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
-                throw new Exception('Gagal mengupload file');
+                throw new Exception('Gagal mengupload file. Pastikan folder network dapat diakses.');
             }
         }
 
-        // Update data di database
-        $query = "UPDATE disposisi_surat SET kode = :kode, tanggal_surat = :tanggal_surat, tanggal_masuk = :tanggal_masuk, 
-                  nomer_surat = :nomer_surat, dari = :dari, perihal = :perihal, instruksi = :instruksi, 
-                  diteruskan = :diteruskan, file_path = :file_path WHERE id = :id";
+        // Update database
+        $query = "UPDATE disposisi_surat SET 
+                  kode = :kode, 
+                  tanggal_surat = :tanggal_surat, 
+                  tanggal_masuk = :tanggal_masuk, 
+                  nomer_surat = :nomer_surat, 
+                  dari = :dari, 
+                  perihal = :perihal, 
+                  instruksi = :instruksi, 
+                  diteruskan = :diteruskan, 
+                  file_path = :file_path 
+                  WHERE id = :id";
 
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':kode', $kode);
-        $stmt->bindParam(':tanggal_surat', $tanggal_surat);
-        $stmt->bindParam(':tanggal_masuk', $tanggal_masuk);
-        $stmt->bindParam(':nomer_surat', $nomer_surat);
-        $stmt->bindParam(':dari', $dari);
-        $stmt->bindParam(':perihal', $perihal);
-        $stmt->bindParam(':instruksi', $instruksi);
-        $stmt->bindParam(':diteruskan', $diteruskan);
-        $stmt->bindParam(':file_path', $db_path);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute([
+            ':kode' => $kode,
+            ':tanggal_surat' => $tanggal_surat,
+            ':tanggal_masuk' => $tanggal_masuk,
+            ':nomer_surat' => $nomer_surat,
+            ':dari' => $dari,
+            ':perihal' => $perihal,
+            ':instruksi' => $instruksi,
+            ':diteruskan' => $diteruskan,
+            ':file_path' => $db_path,
+            ':id' => $id
+        ]);
 
-        if ($stmt->execute()) {
-            $pdo->commit();
-            header("Location: disposisi.php");
-            exit;
-        } else {
-            throw new Exception("Gagal mengupdate data");
-        }
+        $pdo->commit();
+        header("Location: disposisi.php");
+        exit;
     } catch (Exception $e) {
         $pdo->rollBack();
         echo "Error: " . $e->getMessage();
     }
 }
+
 ?>
 
 <!DOCTYPE html>

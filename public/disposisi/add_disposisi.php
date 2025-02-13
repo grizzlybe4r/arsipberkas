@@ -3,15 +3,17 @@ require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
 check_login('sekre');
 
-$current_user_role = $_SESSION['user']['role']; // Pastikan session sudah diset saat login
+$current_user_role = $_SESSION['user']['role'];
 
+// Define network path for PDF uploads
+define('NETWORK_PDF_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+define('LOCAL_IMAGE_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
-        // Mulai transaction
         $pdo->beginTransaction();
 
-        // Dapatkan nomor urut terakhir
+        // Get last sequence number
         $stmt = $pdo->query("SELECT MAX(no) as max_no FROM disposisi_surat");
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $next_no = ($row['max_no'] ?? 0) + 1;
@@ -27,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $diteruskan = $_POST['diteruskan'];
         $db_path = null;
 
+
         // Handle file upload
         if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
             $file = $_FILES['file'];
@@ -41,25 +44,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid() . '.' . $ext;
 
-            // Determine subdirectory based on file type
-            $subdir = $file_type == 'application/pdf' ? 'pdf' : 'images';
-            $upload_path = UPLOAD_DIR . $subdir . '/' . $filename;
-            $db_path = UPLOAD_URL . $subdir . '/' . $filename;
+            // Determine upload path based on file type
+            if ($file_type == 'application/pdf') {
+                // Create network directory if it doesn't exist
+                if (!is_dir(NETWORK_PDF_PATH)) {
+                    if (!mkdir(NETWORK_PDF_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori network');
+                    }
+                }
 
-            // Create directory if it doesn't exist
-            if (!is_dir(UPLOAD_DIR . $subdir)) {
-                mkdir(UPLOAD_DIR . $subdir, 0755, true);
+                $upload_path = NETWORK_PDF_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
+            } else {
+                // For images, keep using local storage
+                if (!is_dir(LOCAL_IMAGE_PATH)) {
+                    if (!mkdir(LOCAL_IMAGE_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori lokal');
+                    }
+                }
+
+                $upload_path = LOCAL_IMAGE_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
             }
 
             // Move uploaded file
             if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
-                throw new Exception('Gagal mengupload file');
+                throw new Exception('Gagal mengupload file. Pastikan folder network dapat diakses.');
             }
         }
 
-        // Insert into database using PDO
+        // Insert into database
         $query = "INSERT INTO disposisi_surat (no, kode, tanggal_surat, tanggal_masuk, nomer_surat, dari, perihal, instruksi, diteruskan, file_path) 
-          VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path)";
+                 VALUES (:no, :kode, :tanggal_surat, :tanggal_masuk, :nomer_surat, :dari, :perihal, :instruksi, :diteruskan, :file_path)";
 
         $stmt = $pdo->prepare($query);
         $stmt->execute([
@@ -75,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ':file_path' => $db_path,
         ]);
 
-        // Commit transaction
         $pdo->commit();
         header("Location: disposisi.php");
         exit;

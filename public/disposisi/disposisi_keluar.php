@@ -4,6 +4,18 @@ require_once '../../includes/auth.php';
 check_login();
 $role = $_SESSION['user']['role'];
 
+function getFileUrl($file_path)
+{
+    // Check if it's a network path
+    if (strpos($file_path, 'DISPOSISI SURAT') !== false) {
+        // Convert network path to web-accessible URL
+        // Create a URL that points to a script that will serve the file
+        return 'serve_file.php?path=' . urlencode($file_path);
+    }
+    // Return original path for local files
+    return $file_path;
+}
+
 // Initialize pagination variables
 $rows_per_page = isset($_GET['rows']) ? (int)$_GET['rows'] : 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -335,7 +347,7 @@ function getNamaBulan($bulan)
                             </form>
                             <!-- Tampilkan info pencarian jika ada -->
                             <?php if (!empty($search_query)): ?>
-                                <div class="alert alert-info">
+                                <div class="alert alert-info mt-3">
                                     Menampilkan hasil pencarian untuk: "<?= htmlspecialchars($search_query) ?>"
                                     <?php if ($total_rows > 0): ?>
                                         (<?= $total_rows ?> hasil ditemukan)
@@ -350,12 +362,12 @@ function getNamaBulan($bulan)
                                     <thead class="table-light">
                                         <tr>
                                             <th class="text-center">No</th>
-                                            <th>Kode</th>
-                                            <th>Kategori</th>
-                                            <th>Tanggal</th>
-                                            <th>Nomor Surat</th>
-                                            <th>Perihal</th>
-                                            <th>Ke</th>
+                                            <th class="text-center">Kode</th>
+                                            <th class="text-center">Kategori</th>
+                                            <th class="text-center">Tanggal</th>
+                                            <th class="text-center">Nomor Surat</th>
+                                            <th class="text-center">Perihal</th>
+                                            <th class="text-center">Ke</th>
                                             <th class="text-center">File</th>
                                             <?php if ($role === 'sekre' || $role === 'ti_admin'): ?>
                                                 <th class="text-center">Aksi</th>
@@ -390,24 +402,54 @@ function getNamaBulan($bulan)
                                                 <td><?= htmlspecialchars($row['ke'] ?? '') ?></td>
                                                 <td class="text-center">
                                                     <?php
-                                                    if (!empty($row['file_path']) && isValidFile($row['file_path'])) {
+                                                    if (!empty($row['file_path'])) {
                                                         $ext = strtolower(pathinfo($row['file_path'], PATHINFO_EXTENSION));
-                                                        $file_url = htmlspecialchars($row['file_path']);
+                                                        $file_url = getFileUrl($row['file_path']);
 
                                                         if ($ext == 'pdf') {
+                                                            echo "<div class='btn-group'>";
                                                             echo "<a href='{$file_url}' class='btn btn-sm btn-outline-primary' target='_blank'>
-                            <i class='fas fa-file-pdf'></i> Lihat PDF
-                          </a>";
+                                                                    <i class='fas fa-file-pdf'></i> Lihat PDF
+                                                                  </a>";
+                                                            echo "<button type='button' class='btn btn-sm btn-outline-secondary' 
+                                                                    onclick='previewPDF(\"" . htmlspecialchars($file_url) . "\")'>
+                                                                    <i class='fas fa-eye'></i> Preview
+                                                                  </button>";
+                                                            echo "</div>";
                                                         } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
                                                             echo "<img src='{$file_url}' alt='Gambar' class='img-thumbnail' 
-                            onclick='showModal(this)' style='cursor: zoom-in; max-height: 50px;' 
-                            data-bs-toggle='tooltip' title='Klik untuk memperbesar'>";
+                                                                  onclick='showModal(this)' style='cursor: zoom-in; max-height: 50px;' 
+                                                                  data-bs-toggle='tooltip' title='Klik untuk memperbesar'>";
                                                         }
                                                     } else {
                                                         echo "<span class='text-muted'><i class='fas fa-times'></i> Tidak tersedia</span>";
                                                     }
                                                     ?>
                                                 </td>
+                                                <!-- Modal Preview -->
+                                                <div class="modal fade" id="pdfPreviewModal" tabindex="-1">
+                                                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Preview PDF</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body p-0">
+                                                                <div class="ratio ratio-16x9">
+                                                                    <iframe id="pdfViewer" class="embed-responsive-item" style="border: none;"></iframe>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <a id="downloadPdf" href="#" class="btn btn-primary" download>
+                                                                    <i class="fas fa-download"></i> Download PDF
+                                                                </a>
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                                    <i class="fas fa-times"></i> Tutup
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 <?php if ($role === 'sekre' || $role === 'ti_admin'): ?>
                                                     <td class="text-center">
@@ -674,7 +716,6 @@ function getNamaBulan($bulan)
             resetZoom();
         });
         document.addEventListener('DOMContentLoaded', function() {
-            // Sidebar toggle functionality
             const sidebar = document.getElementById('sidebar');
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -682,16 +723,24 @@ function getNamaBulan($bulan)
             function toggleSidebar() {
                 sidebar.classList.toggle('show');
                 sidebarBackdrop.classList.toggle('show');
+
+                // Sembunyikan tombol hanya jika layar ≤ 768px
+                if (window.innerWidth <= 768) {
+                    sidebarToggle.style.display = sidebar.classList.contains('show') ? 'none' : 'block';
+                }
             }
 
             sidebarToggle.addEventListener('click', toggleSidebar);
             sidebarBackdrop.addEventListener('click', toggleSidebar);
 
-            // Close sidebar when window is resized to desktop view
+            // Menampilkan kembali tombol saat sidebar ditutup atau layar diperbesar
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 768) {
                     sidebar.classList.remove('show');
                     sidebarBackdrop.classList.remove('show');
+                    sidebarToggle.style.display = "block"; // Pastikan tombol selalu muncul di desktop
+                } else if (!sidebar.classList.contains('show')) {
+                    sidebarToggle.style.display = "block"; // Jika sidebar tertutup di mobile, tampilkan kembali tombol
                 }
             });
 
@@ -713,6 +762,16 @@ function getNamaBulan($bulan)
                 });
             });
         });
+
+        function previewPDF(url) {
+            const modal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
+            const viewer = document.getElementById('pdfViewer');
+            const downloadBtn = document.getElementById('downloadPdf');
+
+            viewer.src = url;
+            downloadBtn.href = url;
+            modal.show();
+        }
     </script>
 </body>
 

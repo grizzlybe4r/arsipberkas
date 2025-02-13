@@ -2,6 +2,10 @@ body {
     background-color: #f8faf8;
 }
 
+/* :root {
+    --bs-body-font-family: 'Poppins', sans-serif;
+} */
+
 .sidebar {
     min-height: 100vh;
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
@@ -90,6 +94,7 @@ body {
     color: white;
     margin-bottom: 1.5rem;
     border-radius: 0.35rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .upload-drop-zone {
@@ -209,7 +214,7 @@ body {
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .sidebar {
-        width: 200px;
+        width: 240px;
     }
 
     .nav-link {
@@ -230,7 +235,6 @@ body {
     opacity: 0.9;
 }
 
-/* Tambahkan ke file style.css */
 .search-container {
     position: relative;
 }
@@ -318,3 +322,11 @@ select, input {
     font-size: 14px;
   }
   
+  .table-bordered {
+    border: 1px solid black !important;
+}
+
+.table-bordered th, 
+.table-bordered td {
+    border: 1px solid black !important;
+}

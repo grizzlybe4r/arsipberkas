@@ -5,6 +5,9 @@ check_login('sekre');
 
 $current_user_role = $_SESSION['user']['role']; // Pastikan session sudah diset saat login
 
+// Define network path for PDF uploads
+define('NETWORK_PDF_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+define('LOCAL_IMAGE_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
@@ -38,14 +41,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid() . '.' . $ext;
 
-            // Determine subdirectory based on file type
-            $subdir = $file_type == 'application/pdf' ? 'pdf' : 'images';
-            $upload_path = UPLOAD_DIR . $subdir . '/' . $filename;
-            $db_path = UPLOAD_URL . $subdir . '/' . $filename;
+            // Determine upload path based on file type
+            if ($file_type == 'application/pdf') {
+                // Create network directory if it doesn't exist
+                if (!is_dir(NETWORK_PDF_PATH)) {
+                    if (!mkdir(NETWORK_PDF_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori network');
+                    }
+                }
 
-            // Create directory if it doesn't exist
-            if (!is_dir(UPLOAD_DIR . $subdir)) {
-                mkdir(UPLOAD_DIR . $subdir, 0755, true);
+                $upload_path = NETWORK_PDF_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
+            } else {
+                // For images, keep using local storage
+                if (!is_dir(LOCAL_IMAGE_PATH)) {
+                    if (!mkdir(LOCAL_IMAGE_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori lokal');
+                    }
+                }
+
+                $upload_path = LOCAL_IMAGE_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
             }
 
             // Move uploaded file

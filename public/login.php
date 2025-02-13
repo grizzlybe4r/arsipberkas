@@ -53,7 +53,7 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dashboard</title>
+    <title>Login - Sistem Informasi Bank Kulon Progo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -74,7 +74,8 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
 
         .form-signin {
             background: rgba(255, 255, 255, 0.95);
-            width: 100%;
+            width: 90%;
+            /* Changed from 100% */
             max-width: 400px;
             padding: 2rem;
             margin: auto;
@@ -167,6 +168,51 @@ $logout_message = isset($_GET['logout']) ? "Anda telah berhasil logout." : null;
             color: #2c3e50;
             font-weight: 700;
             margin-bottom: 1.5rem;
+        }
+
+        /* Add these new media queries for mobile responsiveness */
+        @media (max-width: 576px) {
+            .form-signin {
+                width: 95%;
+                padding: 1.5rem;
+                margin: 1rem auto;
+            }
+
+            .logo {
+                width: 60px;
+                /* Smaller logo for mobile */
+                height: 60px;
+                margin-bottom: 1rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .form-signin input {
+                height: 45px;
+                /* Slightly smaller input fields */
+            }
+
+            .btn-primary {
+                height: 45px;
+            }
+
+            .copyright {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Add this for better padding on very small devices */
+        @media (max-width: 320px) {
+            .form-signin {
+                padding: 1rem;
+            }
+
+            .form-floating {
+                margin-bottom: 0.75rem;
+            }
         }
     </style>
 </head>

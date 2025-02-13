@@ -13,6 +13,9 @@ check_login();
     <title>Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" type="text/css" href="assets/style.css">
 </head>
 
@@ -28,7 +31,7 @@ check_login();
     <div class="container-fluid p-0">
         <div class="row g-0">
             <!-- Sidebar -->
-            <div class="sidebar  p-3" id="sidebar">
+            <div class="sidebar bg-white p-3" id="sidebar">
                 <div class="d-flex align-items-center mb-4">
                     <i class="bi bi-bank fs-2 text-primary me-2"></i>
                     <h4 class="mb-0">Sistem Informasi Bank Kulon Progo</h4>
@@ -619,7 +622,6 @@ check_login();
                 ['application/pdf']
             );
 
-            // Sidebar toggle functionality
             const sidebar = document.getElementById('sidebar');
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -627,16 +629,24 @@ check_login();
             function toggleSidebar() {
                 sidebar.classList.toggle('show');
                 sidebarBackdrop.classList.toggle('show');
+
+                // Sembunyikan tombol hanya jika layar ≤ 768px
+                if (window.innerWidth <= 768) {
+                    sidebarToggle.style.display = sidebar.classList.contains('show') ? 'none' : 'block';
+                }
             }
 
             sidebarToggle.addEventListener('click', toggleSidebar);
             sidebarBackdrop.addEventListener('click', toggleSidebar);
 
-            // Close sidebar when window is resized to desktop view
+            // Menampilkan kembali tombol saat sidebar ditutup atau layar diperbesar
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 768) {
                     sidebar.classList.remove('show');
                     sidebarBackdrop.classList.remove('show');
+                    sidebarToggle.style.display = "block"; // Pastikan tombol selalu muncul di desktop
+                } else if (!sidebar.classList.contains('show')) {
+                    sidebarToggle.style.display = "block"; // Jika sidebar tertutup di mobile, tampilkan kembali tombol
                 }
             });
         });

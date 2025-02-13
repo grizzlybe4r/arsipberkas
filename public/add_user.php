@@ -280,7 +280,6 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Sidebar toggle functionality
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -288,16 +287,24 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         function toggleSidebar() {
             sidebar.classList.toggle('show');
             sidebarBackdrop.classList.toggle('show');
+
+            // Sembunyikan tombol hanya jika layar ≤ 768px
+            if (window.innerWidth <= 768) {
+                sidebarToggle.style.display = sidebar.classList.contains('show') ? 'none' : 'block';
+            }
         }
 
         sidebarToggle.addEventListener('click', toggleSidebar);
         sidebarBackdrop.addEventListener('click', toggleSidebar);
 
-        // Close sidebar when window is resized to desktop view
+        // Menampilkan kembali tombol saat sidebar ditutup atau layar diperbesar
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('show');
                 sidebarBackdrop.classList.remove('show');
+                sidebarToggle.style.display = "block"; // Pastikan tombol selalu muncul di desktop
+            } else if (!sidebar.classList.contains('show')) {
+                sidebarToggle.style.display = "block"; // Jika sidebar tertutup di mobile, tampilkan kembali tombol
             }
         });
     </script>

@@ -3,6 +3,9 @@ require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
 check_login('sekre');
 
+define('NETWORK_PDF_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+define('LOCAL_IMAGE_PATH', '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\');
+
 // Pastikan ada parameter ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: disposisi_keluar.php");
@@ -45,16 +48,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid() . '.' . $ext;
-            $subdir = $file_type == 'application/pdf' ? 'pdf' : 'images';
-            $upload_path = UPLOAD_DIR . $subdir . '/' . $filename;
-            $db_path = UPLOAD_URL . $subdir . '/' . $filename;
+            // Handle upload based on file type
+            if ($file_type == 'application/pdf') {
+                // Create network directory if doesn't exist
+                if (!is_dir(NETWORK_PDF_PATH)) {
+                    if (!mkdir(NETWORK_PDF_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori network');
+                    }
+                }
 
-            if (!is_dir(UPLOAD_DIR . $subdir)) {
-                mkdir(UPLOAD_DIR . $subdir, 0755, true);
+                $upload_path = NETWORK_PDF_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
+            } else {
+                // For images, use local storage
+                if (!is_dir(LOCAL_IMAGE_PATH)) {
+                    if (!mkdir(LOCAL_IMAGE_PATH, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori lokal');
+                    }
+                }
+
+                $upload_path = LOCAL_IMAGE_PATH . $filename;
+                $db_path = '\\\\172.16.34.5\\ftp\\DISPOSISI SURAT\\' . $filename;
             }
 
+            // Delete old file if exists
+            if (!empty($data['file_path'])) {
+                if (strpos($data['file_path'], 'DISPOSISI SURAT') !== false) {
+                    // Old file is in network path
+                    @unlink($data['file_path']);
+                } else {
+                    // Old file is in local path
+                    @unlink(UPLOAD_DIR . str_replace(UPLOAD_URL, '', $data['file_path']));
+                }
+            }
+
+            // Move uploaded file
             if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
-                throw new Exception('Gagal mengupload file');
+                throw new Exception('Gagal mengupload file. Pastikan folder network dapat diakses.');
             }
         }
 
